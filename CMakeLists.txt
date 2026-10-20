@@ -23,6 +23,16 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     )
 endif()
 
+add_library(aural_core src/core/range.cpp)
+add_library(aural::core ALIAS aural_core)
+target_compile_features(aural_core PUBLIC cxx_std_20)
+target_include_directories(
+    aural_core
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
+target_link_libraries(aural_core PRIVATE aural_project_warnings)
+
 add_executable(aural_lab src/main.cpp)
 target_link_libraries(aural_lab PRIVATE aural_project_warnings)
 
@@ -45,6 +55,14 @@ if(BUILD_TESTING)
             OpenSSL::Crypto
     )
 
+    add_executable(core_range_tests tests/core_range_tests.cpp)
+    target_link_libraries(
+        core_range_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
+    )
+
     add_test(NAME executable_startup COMMAND aural_lab)
     set_tests_properties(
         executable_startup
@@ -64,5 +82,11 @@ if(BUILD_TESTING)
     set_tests_properties(
         frozen_input_checksums
         PROPERTIES PASS_REGULAR_EXPRESSION "FROZEN_INPUTS_OK"
+    )
+
+    add_test(NAME core_range_arithmetic COMMAND core_range_tests)
+    set_tests_properties(
+        core_range_arithmetic
+        PROPERTIES PASS_REGULAR_EXPRESSION "CORE_RANGE_TESTS_OK"
     )
 endif()

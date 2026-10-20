@@ -7,8 +7,9 @@ of an existing Python, Node.js, or Java implementation.
 
 The current foundation contains a frozen public specification/conformance
 snapshot, a minimal native status executable, dependency known-answer tests,
-and frozen-input integrity tests. It does **not** contain an AURAL verifier and
-does not yet accept, reject, parse, or extract AURAL packages.
+frozen-input integrity tests, and a small reusable checked-range library. It
+does **not** contain an AURAL verifier and does not yet accept, reject, parse,
+or extract AURAL packages.
 
 ## Clean-room method
 
@@ -34,6 +35,26 @@ cmake --preset ucrt64-debug
 cmake --build --preset ucrt64-debug
 ctest --preset ucrt64-debug
 ```
+
+## Reusable library
+
+Within a CMake build tree, another target can link the library directly:
+
+```cmake
+add_subdirectory(path/to/AuralCppInteropLab)
+target_link_libraries(my_target PRIVATE aural::core)
+```
+
+Include `<aural/core/range.hpp>` to use the APIs available today:
+
+- `checked_add` performs checked unsigned 64-bit addition.
+- `ByteRange` creates validated immutable half-open byte ranges and provides
+  size, empty, containment, and overlap queries.
+- `range_within_file` validates an offset and length against a declared file
+  size, including integer-overflow rejection.
+
+Invalid inputs return an empty `std::optional`; normal validation failures do
+not throw exceptions. No installed-package or stable-ABI guarantee is provided.
 
 The intended long-term objective is independent execution of the public Core
 Reader conformance inventory through Adapter Protocol 1. Passing that public
