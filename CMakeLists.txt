@@ -23,7 +23,11 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     )
 endif()
 
-add_library(aural_core src/core/range.cpp)
+add_library(
+    aural_core
+    src/core/file_reader.cpp
+    src/core/range.cpp
+)
 add_library(aural::core ALIAS aural_core)
 target_compile_features(aural_core PUBLIC cxx_std_20)
 target_include_directories(
@@ -32,9 +36,20 @@ target_include_directories(
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 target_link_libraries(aural_core PRIVATE aural_project_warnings)
+if(UNIX)
+    target_compile_definitions(aural_core PRIVATE _FILE_OFFSET_BITS=64)
+endif()
 
 add_executable(aural_lab src/main.cpp)
 target_link_libraries(aural_lab PRIVATE aural_project_warnings)
+
+add_executable(bounded_read_example examples/bounded_read.cpp)
+target_link_libraries(
+    bounded_read_example
+    PRIVATE
+        aural::core
+        aural_project_warnings
+)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -58,6 +73,14 @@ if(BUILD_TESTING)
     add_executable(core_range_tests tests/core_range_tests.cpp)
     target_link_libraries(
         core_range_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
+    )
+
+    add_executable(core_file_reader_tests tests/core_file_reader_tests.cpp)
+    target_link_libraries(
+        core_file_reader_tests
         PRIVATE
             aural::core
             aural_project_warnings
@@ -88,5 +111,11 @@ if(BUILD_TESTING)
     set_tests_properties(
         core_range_arithmetic
         PROPERTIES PASS_REGULAR_EXPRESSION "CORE_RANGE_TESTS_OK"
+    )
+
+    add_test(NAME core_file_reader COMMAND core_file_reader_tests)
+    set_tests_properties(
+        core_file_reader
+        PROPERTIES PASS_REGULAR_EXPRESSION "CORE_FILE_READER_TESTS_OK"
     )
 endif()

@@ -7,9 +7,9 @@ of an existing Python, Node.js, or Java implementation.
 
 The current foundation contains a frozen public specification/conformance
 snapshot, a minimal native status executable, dependency known-answer tests,
-frozen-input integrity tests, and a small reusable checked-range library. It
-does **not** contain an AURAL verifier and does not yet accept, reject, parse,
-or extract AURAL packages.
+frozen-input integrity tests, checked byte ranges, and a bounded read-only
+native file reader. It does **not** contain an AURAL verifier and does not yet
+accept, reject, parse, or extract AURAL packages.
 
 ## Clean-room method
 
@@ -45,7 +45,7 @@ add_subdirectory(path/to/AuralCppInteropLab)
 target_link_libraries(my_target PRIVATE aural::core)
 ```
 
-Include `<aural/core/range.hpp>` to use the APIs available today:
+Include `<aural/core/range.hpp>` to use checked arithmetic and byte ranges:
 
 - `checked_add` performs checked unsigned 64-bit addition.
 - `ByteRange` creates validated immutable half-open byte ranges and provides
@@ -54,7 +54,48 @@ Include `<aural/core/range.hpp>` to use the APIs available today:
   size, including integer-overflow rejection.
 
 Invalid inputs return an empty `std::optional`; normal validation failures do
-not throw exceptions. No installed-package or stable-ABI guarantee is provided.
+not throw exceptions.
+
+Include `<aural/core/file_reader.hpp>` for bounded native reads. This complete
+example opens one file, reports a portable error, and reads exactly 16 bytes
+into caller-owned storage:
+
+```cpp
+#include <aural/core/file_reader.hpp>
+
+#include <array>
+#include <cstddef>
+#include <filesystem>
+#include <iostream>
+#include <utility>
+
+int read_header(const std::filesystem::path& path)
+{
+    auto opened = aural::core::FileReader::open(path);
+    if (!opened) {
+        std::cerr << opened.error().description() << '\n';
+        return 1;
+    }
+
+    auto reader = std::move(opened).value();
+    std::array<std::byte, 16> header{};
+    const auto read = reader.read_at(0, header);
+    if (!read) {
+        std::cerr << read.error().description() << '\n';
+        return 1;
+    }
+    return 0;
+}
+```
+
+`FileReader` owns one regular-file handle, closes it with RAII, is movable but
+not copyable, captures the opened size and identity metadata, rejects invalid
+ranges before native I/O, and never allocates from a requested file length.
+Successful reads fill the entire supplied `std::span<std::byte>`. See
+`docs/FILE-READER.md` for platform behavior and concurrency limitations.
+
+All APIs are experimental. No installed-package, stable-source, or stable-ABI
+guarantee is provided.
 
 The intended long-term objective is independent execution of the public Core
 Reader conformance inventory through Adapter Protocol 1. Passing that public
@@ -65,6 +106,8 @@ verification of the input space, or a security guarantee.
 
 - No AURAL JSON, manifest, ZIP, ZIP64, WAV, or adapter implementation exists.
 - No package-verification API exists.
+- File consistency checks reduce, but cannot eliminate, concurrent-mutation
+  races or detect every same-size content change on every filesystem.
 - No conformance case is currently executed through a verifier.
 - Draft 0.1 legacy fixtures are frozen but explicitly optional.
 - The project has no affiliation with or certification by a third party.

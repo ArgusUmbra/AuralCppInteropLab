@@ -6,15 +6,16 @@ The repository currently builds only:
 
 - `aural_lab`, a status executable that states the verifier is not implemented;
 - `dependency_smoke`, OpenSSL SHA-256 and zlib CRC32 known-answer checks; and
-- `frozen_input_verify`, a streaming check of the frozen SHA-256 inventory.
+- `frozen_input_verify`, a streaming check of the frozen SHA-256 inventory;
+- `aural_core`, checked 64-bit byte ranges and a bounded native file reader.
 
-There is no production verifier component yet.
+There is no package verifier component yet.
 
 ## Planned component boundaries
 
 | Future component | Responsibility | Defensive boundary |
 |---|---|---|
-| Bounded file access | Immutable read-only file handle, range reads, stable size/identity checks | Never allocate or read from an unvalidated hostile length |
+| Bounded file access | Read-only move-owned file handle, exact range reads, size/identity checks | Implemented; never allocates or reads from an unvalidated hostile length |
 | Checked arithmetic | Typed checked add/subtract/range conversion for offsets and lengths | Reject overflow, truncation, signed/unsigned ambiguity, and ZIP64 high-bit abuse |
 | UTF-8 and JSON | Strict UTF-8, duplicate-name detection, bounded depth and token sizes | No replacement decoding; no unsafe numeric coercion |
 | RFC 8785 JCS | Exact canonical-byte validation for the supported JSON domain | Compare original bytes with independently generated canonical bytes |

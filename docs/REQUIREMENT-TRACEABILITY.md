@@ -15,7 +15,7 @@ requirement is implemented or tested.
 | ZIP records, names, header consistency, layout | Specification §§6.1-6.3 | Raw ZIP parser and malformed-layout tests | Frozen; planned |
 | Extra fields and ZIP64 sentinel resolution | Specification §6.4 | ZIP64 parser and boundary tests | Frozen; planned |
 | CRC32 and file metadata | Specification §6.5 | Streaming zlib integration and metadata tests | Dependency KAT only; planned |
-| Resource limits | Specification §6.6 | Bounded I/O, allocation, depth, and aggregate tests | Frozen; planned |
+| Resource limits | Specification §6.6 | Bounded I/O, allocation, depth, and aggregate tests | Bounded native file I/O foundation tested; parser limits planned |
 | Ordered package verification algorithm | Specification §7 | Package-verifier integration tests | Frozen; planned |
 | Version and optional Draft 0.1 behavior | Specification §8 | Version dispatch; optional legacy suite | Frozen; planned |
 | Canonical identity and deterministic output | Specification §9 | Identity/determinism tests | Frozen; planned |
