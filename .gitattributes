@@ -1,0 +1,17 @@
+* text=auto
+
+.gitattributes text eol=lf
+.gitignore text eol=lf
+*.cmake text eol=lf
+*.cpp text eol=lf
+*.h text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+CMakeLists.txt text eol=lf
+
+# These files are raw blobs from the frozen authoritative commit. Git must not
+# perform line-ending or other content conversion on any of them.
+/frozen-input/source/** -text whitespace=-blank-at-eol,-blank-at-eof
+/frozen-input/SHA256SUMS.txt text eol=lf
+/frozen-input/SOURCE-SNAPSHOT.json text eol=lf

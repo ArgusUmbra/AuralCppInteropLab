@@ -1,0 +1,37 @@
+# CMake and native build output
+/build/
+/cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+Testing/
+compile_commands.json
+*.a
+*.dll
+*.dll.a
+*.exe
+*.lib
+*.o
+*.obj
+*.pdb
+
+# Editors, local environments, and temporary files
+.env
+.env.*
+.idea/
+.vscode/
+*.bak
+*.log
+*.swp
+*.tmp
+*~
+
+# Future opt-in large-file artifacts and scratch space
+/scratch/
+/large-test-artifacts/
+*.large.aural
+*.sparse.aural
+
+# Python cache produced only when running repository tools
+__pycache__/
+*.py[cod]
