@@ -1,6 +1,8 @@
 #ifndef AURAL_CORE_JSON_JSON_STRING_DECODER_HPP
 #define AURAL_CORE_JSON_JSON_STRING_DECODER_HPP
 
+#include "json_limits.hpp"
+
 #include <aural/core/utf8.hpp>
 
 #include <cstddef>
@@ -10,8 +12,6 @@
 #include <string>
 
 namespace aural::core::json {
-
-inline constexpr std::size_t max_manifest_bytes = 1'048'576U;
 
 struct JsonStringLimits final {
     // Callers may lower either limit but may not raise it above the frozen

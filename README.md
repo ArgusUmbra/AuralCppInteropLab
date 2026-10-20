@@ -8,9 +8,10 @@ of an existing Python, Node.js, or Java implementation.
 The current foundation contains a frozen public specification/conformance
 snapshot, a minimal native status executable, dependency known-answer tests,
 frozen-input integrity tests, checked byte ranges, a bounded read-only native
-file reader, and strict AURAL-profile UTF-8 validation. It does **not** contain
-an AURAL verifier and does not yet accept, reject, parse, or extract AURAL
-packages.
+file reader, strict AURAL-profile UTF-8 validation, bounded JSON string
+decoding, and allocation-free strict JSON integer/literal parsing. It does
+**not** contain an AURAL verifier and does not yet accept, reject, parse, or
+extract AURAL packages.
 
 ## Clean-room method
 
@@ -25,7 +26,7 @@ internal helpers, runners, and fixture generators are excluded. See
 [![Linux C++ CI](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml)
 
 The Linux workflow is configured for GCC 14, Clang 18, and Clang 18 with
-AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `34ee28f`
+AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `31b1893`
 passed all three jobs. Uncommitted work in a local tree has not run in GitHub
 Actions and must not be described as CI-tested.
 
@@ -77,7 +78,7 @@ ctest --preset ucrt64-release
 
 The verified platform is Windows with MSYS2 UCRT64 GCC 15.2.0, CMake 4.2.3,
 Ninja 1.13.2, OpenSSL 3.6.1, and zlib 1.3.2. Ubuntu 24.04 with GCC, Clang, and
-the Clang sanitizers passed for baseline commit `34ee28f`.
+the Clang sanitizers passed for baseline commit `31b1893`.
 
 ## Reusable library
 
@@ -154,8 +155,8 @@ verification of the input space, or a security guarantee.
 
 ## Limitations
 
-- No AURAL JSON parser, manifest, ZIP, ZIP64, WAV, or adapter implementation
-  exists.
+- No complete AURAL JSON document parser, manifest, ZIP, ZIP64, WAV, or adapter
+  implementation exists.
 - No package-verification API exists.
 - File consistency checks reduce, but cannot eliminate, concurrent-mutation
   races or detect every same-size content change on every filesystem.

@@ -20,7 +20,11 @@ requirement is implemented or tested.
 | Escaped UTF-16 surrogate pairs; rejection of isolated/reversed surrogates | Specification §4.1; RFC 8259 §8.2 | `core_json_string_decoder`: BMP, supplementary, and malformed-pair cases | Foundation tested |
 | Literal UTF-8, scalar-only strings, noncharacter rejection, and no normalization | Specification §4.1 | `core_json_string_decoder`: UTF-8 detail, literal/escaped equivalence, noncharacters, normalization distinction | Foundation tested |
 | Bounded JSON string source/output and structured exact-offset failures | Specification §§4.1, 6.6, 10 | `core_json_string_decoder`: reduced limits, 1 MiB overflow, malformed and unchanged-input cases | Foundation tested locally; new sanitizer run pending |
-| Duplicate names, JSON integer domain, nesting, and complete manifest byte limit enforcement | Specification §4.1 | Future strict bounded JSON parser tests | Frozen; planned |
+| RFC 8259 integer token syntax: optional minus, no plus, no leading zeros | Specification §4.1 via RFC 8259 §6 | `core_json_primitives`: valid values, plus, leading-zero, and truncation cases | Foundation tested |
+| AURAL integer-only domain, safe range, and negative-zero rejection | Specification §4.1 item 4; RFC 7493 §2.2 | `core_json_primitives`: exact ±(2^53−1), one beyond each edge, fraction, exponent, and `-0` cases | Foundation tested locally; new CI run pending |
+| Exact lowercase `true`, `false`, and `null` with bounded token consumption | RFC 8259 §3 | `core_json_primitives`: all literals, truncation, capitalization, mismatch, boundaries, and consumption | Foundation tested locally; new CI run pending |
+| Allocation-free primitive conversion, checked arithmetic, exact source token, structured byte offsets | Specification §§4.1, 6.6, 10 | `core_json_primitives`: hostile digits, unchanged input, source borrowing, determinism, limits, and offsets | Foundation tested locally; new sanitizer run pending |
+| Duplicate names, nesting, and complete manifest byte limit enforcement | Specification §4.1 | Future strict bounded JSON document parser tests | Frozen; planned |
 | Exact RFC 8785 canonical manifest bytes | Specification §4.2 | JCS component and canonicality vectors | Frozen; planned |
 | Manifest members, assets, timestamps, extensions | Specification §5 | Immutable manifest model and semantic tests | Frozen; planned |
 | ZIP records, names, header consistency, layout | Specification §§6.1-6.3 | Raw ZIP parser and malformed-layout tests | Frozen; planned |
