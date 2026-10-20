@@ -56,6 +56,7 @@ add_library(
     aural_core
     src/core/file_reader.cpp
     src/core/range.cpp
+    src/core/utf8.cpp
 )
 add_library(aural::core ALIAS aural_core)
 target_compile_features(aural_core PUBLIC cxx_std_20)
@@ -86,6 +87,14 @@ target_link_libraries(aural_lab PRIVATE aural_project_warnings)
 add_executable(bounded_read_example examples/bounded_read.cpp)
 target_link_libraries(
     bounded_read_example
+    PRIVATE
+        aural::core
+        aural_project_warnings
+)
+
+add_executable(validate_utf8_example examples/validate_utf8.cpp)
+target_link_libraries(
+    validate_utf8_example
     PRIVATE
         aural::core
         aural_project_warnings
@@ -126,6 +135,14 @@ if(BUILD_TESTING)
             aural_project_warnings
     )
 
+    add_executable(core_utf8_tests tests/core_utf8_tests.cpp)
+    target_link_libraries(
+        core_utf8_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
+    )
+
     add_test(NAME executable_startup COMMAND aural_lab)
     set_tests_properties(
         executable_startup
@@ -157,5 +174,11 @@ if(BUILD_TESTING)
     set_tests_properties(
         core_file_reader
         PROPERTIES PASS_REGULAR_EXPRESSION "CORE_FILE_READER_TESTS_OK"
+    )
+
+    add_test(NAME core_utf8_validation COMMAND core_utf8_tests)
+    set_tests_properties(
+        core_utf8_validation
+        PROPERTIES PASS_REGULAR_EXPRESSION "CORE_UTF8_TESTS_OK"
     )
 endif()

@@ -7,9 +7,10 @@ of an existing Python, Node.js, or Java implementation.
 
 The current foundation contains a frozen public specification/conformance
 snapshot, a minimal native status executable, dependency known-answer tests,
-frozen-input integrity tests, checked byte ranges, and a bounded read-only
-native file reader. It does **not** contain an AURAL verifier and does not yet
-accept, reject, parse, or extract AURAL packages.
+frozen-input integrity tests, checked byte ranges, a bounded read-only native
+file reader, and strict AURAL-profile UTF-8 validation. It does **not** contain
+an AURAL verifier and does not yet accept, reject, parse, or extract AURAL
+packages.
 
 ## Clean-room method
 
@@ -24,9 +25,9 @@ internal helpers, runners, and fixture generators are excluded. See
 [![Linux C++ CI](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml)
 
 The Linux workflow is configured for GCC 14, Clang 18, and Clang 18 with
-AddressSanitizer plus UndefinedBehaviorSanitizer. Its result is pending the
-first GitHub-hosted execution; the presence of this workflow is not a claim
-that Linux CI passes.
+AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `34ee28f`
+passed all three jobs. Uncommitted work in a local tree has not run in GitHub
+Actions and must not be described as CI-tested.
 
 ## Build and test
 
@@ -76,7 +77,7 @@ ctest --preset ucrt64-release
 
 The verified platform is Windows with MSYS2 UCRT64 GCC 15.2.0, CMake 4.2.3,
 Ninja 1.13.2, OpenSSL 3.6.1, and zlib 1.3.2. Ubuntu 24.04 with GCC, Clang, and
-the Clang sanitizers is configured but remains awaiting its first CI execution.
+the Clang sanitizers passed for baseline commit `34ee28f`.
 
 ## Reusable library
 
@@ -136,6 +137,13 @@ ranges before native I/O, and never allocates from a requested file length.
 Successful reads fill the entire supplied `std::span<std::byte>`. See
 `docs/FILE-READER.md` for platform behavior and concurrency limitations.
 
+Include `<aural/core/utf8.hpp>` for allocation-free validation of a borrowed
+byte span. It rejects malformed RFC 3629 sequences, surrogate encodings,
+out-of-range values, and the Unicode noncharacters forbidden by AURAL. It
+returns a typed category and byte offset without throwing. Embedded NUL is
+valid at this layer; JSON syntax and escape validation remain separate. See
+`docs/UTF8.md` and the compiled `validate_utf8_example`.
+
 All APIs are experimental. No installed-package, stable-source, or stable-ABI
 guarantee is provided.
 
@@ -146,7 +154,8 @@ verification of the input space, or a security guarantee.
 
 ## Limitations
 
-- No AURAL JSON, manifest, ZIP, ZIP64, WAV, or adapter implementation exists.
+- No AURAL JSON parser, manifest, ZIP, ZIP64, WAV, or adapter implementation
+  exists.
 - No package-verification API exists.
 - File consistency checks reduce, but cannot eliminate, concurrent-mutation
   races or detect every same-size content change on every filesystem.

@@ -9,7 +9,14 @@ requirement is implemented or tested.
 | Conformance terminology and Core Reader obligations | Specification §1 | Requirement review and future verifier acceptance tests | Frozen; planned |
 | Scope and trust model | Specification §2 | API contracts and security review | Frozen; planned |
 | Logical package membership | Specification §3 | Package verifier and ZIP inventory tests | Frozen; planned |
-| UTF-8, I-JSON, duplicate names, integer domain | Specification §4.1 | Strict UTF-8/JSON parser tests | Frozen; planned |
+| RFC 3629 UTF-8 byte structure; no overlong, truncated, bad-continuation, or invalid-lead sequences | Specification §4.1 via RFC 8259/RFC 3629 | `core_utf8_validation`: `test_valid_inputs`, `test_invalid_structure` | Foundation tested |
+| Unicode scalar values only; no UTF-8 surrogate encodings or values above U+10FFFF | Specification §4.1 | `core_utf8_validation`: `test_invalid_scalars_and_policy` | Foundation tested |
+| All 66 Unicode noncharacters forbidden, including U+10FFFF | Specification §4.1; Unicode noncharacter definition | `core_utf8_validation`: literal boundaries plus exhaustive 66-value loops | Foundation tested |
+| Preserve Unicode as-is; do not normalize | Specification §4.1; RFC 8785 §3.1 | `core_utf8_validation`: precomposed/decomposed byte-preservation cases | Foundation tested |
+| UTF-8 validation is distinct from JSON control, escape, BOM, and syntax rules | Specification §4.1; RFC 8259 §§7-8 | Embedded-zero case and `docs/UTF8.md`; JSON cases remain planned | UTF-8 foundation tested; JSON planned |
+| Structured non-throwing UTF-8 failures with exact byte offsets | Engineering API requirement | `core_utf8_validation`: offset, length, observed-byte, prefix/suffix, and determinism cases | Foundation tested |
+| UTF-8 validation uses bounded caller storage and constant auxiliary memory | Specification §§6.6, 7, 10 | `core_utf8_validation`: zero-span, unchanged-input, 1 MiB boundary, sanitizer matrix after commit | Foundation tested locally; new sanitizer run pending |
+| Duplicate names, JSON integer domain, nesting, and manifest byte limit enforcement | Specification §4.1 | Future strict bounded JSON parser tests | Frozen; planned |
 | Exact RFC 8785 canonical manifest bytes | Specification §4.2 | JCS component and canonicality vectors | Frozen; planned |
 | Manifest members, assets, timestamps, extensions | Specification §5 | Immutable manifest model and semantic tests | Frozen; planned |
 | ZIP records, names, header consistency, layout | Specification §§6.1-6.3 | Raw ZIP parser and malformed-layout tests | Frozen; planned |
