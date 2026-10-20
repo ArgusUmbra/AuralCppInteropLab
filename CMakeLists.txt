@@ -55,6 +55,7 @@ endif()
 add_library(
     aural_core
     src/core/file_reader.cpp
+    src/core/json/json_string_decoder.cpp
     src/core/range.cpp
     src/core/utf8.cpp
 )
@@ -143,6 +144,14 @@ if(BUILD_TESTING)
             aural_project_warnings
     )
 
+    add_executable(core_json_string_tests tests/core_json_string_tests.cpp)
+    target_link_libraries(
+        core_json_string_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
+    )
+
     add_test(NAME executable_startup COMMAND aural_lab)
     set_tests_properties(
         executable_startup
@@ -180,5 +189,11 @@ if(BUILD_TESTING)
     set_tests_properties(
         core_utf8_validation
         PROPERTIES PASS_REGULAR_EXPRESSION "CORE_UTF8_TESTS_OK"
+    )
+
+    add_test(NAME core_json_string_decoder COMMAND core_json_string_tests)
+    set_tests_properties(
+        core_json_string_decoder
+        PROPERTIES PASS_REGULAR_EXPRESSION "CORE_JSON_STRING_TESTS_OK"
     )
 endif()

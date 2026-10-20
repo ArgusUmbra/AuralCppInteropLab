@@ -8,7 +8,9 @@ The repository currently builds only:
 - `dependency_smoke`, OpenSSL SHA-256 and zlib CRC32 known-answer checks; and
 - `frozen_input_verify`, a streaming check of the frozen SHA-256 inventory;
 - `aural_core`, checked 64-bit byte ranges, a bounded native file reader, and
-  strict allocation-free AURAL-profile UTF-8 validation.
+  strict allocation-free AURAL-profile UTF-8 validation; and
+- `core_json_string_decoder`, adversarial coverage for the internal bounded
+  JSON string-token decoder.
 
 There is no package verifier component yet.
 
@@ -18,7 +20,7 @@ There is no package verifier component yet.
 |---|---|---|
 | Bounded file access | Read-only move-owned file handle, exact range reads, size/identity checks | Implemented; never allocates or reads from an unvalidated hostile length |
 | Checked arithmetic | Typed checked add/subtract/range conversion for offsets and lengths | Reject overflow, truncation, signed/unsigned ambiguity, and ZIP64 high-bit abuse |
-| UTF-8 and JSON | Strict UTF-8 is implemented; duplicate-name detection, bounded depth, and token sizes remain planned | No replacement decoding; no unsafe numeric coercion |
+| UTF-8 and JSON | Strict UTF-8 and bounded string-token decoding are implemented; document parsing, duplicate-name detection, and bounded depth remain planned | No replacement decoding, normalization, or unsafe numeric coercion |
 | RFC 8785 JCS | Exact canonical-byte validation for the supported JSON domain | Compare original bytes with independently generated canonical bytes |
 | Manifest model | Immutable validated Draft 0.2 values, paths, timestamps, extensions | Construct only after syntax, type, range, and semantic validation |
 | ZIP/ZIP64 records | Raw little-endian record parsing and cross-record consistency | Validate complete layout, sentinels, extras, offsets, sizes, names, flags, and metadata |
