@@ -16,6 +16,13 @@
 #include <utility>
 #include <vector>
 
+#if defined(__linux__)
+#include <charconv>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
 namespace {
 
 using aural::core::FileErrorCode;
@@ -105,6 +112,34 @@ void write_bytes(
         && std::equal(left.begin(), left.end(), right.begin());
 }
 
+#if defined(__linux__)
+[[nodiscard]] int find_descriptor_for(const std::filesystem::path& path)
+{
+    struct stat expected {};
+    if (::stat(path.c_str(), &expected) != 0) {
+        return -1;
+    }
+
+    for (const auto& entry : std::filesystem::directory_iterator{"/proc/self/fd"}) {
+        const std::string name = entry.path().filename().string();
+        int descriptor = -1;
+        const auto parsed = std::from_chars(
+            name.data(), name.data() + name.size(), descriptor);
+        if (parsed.ec != std::errc{} || parsed.ptr != name.data() + name.size()) {
+            continue;
+        }
+
+        struct stat candidate {};
+        if (::fstat(descriptor, &candidate) == 0
+            && candidate.st_dev == expected.st_dev
+            && candidate.st_ino == expected.st_ino) {
+            return descriptor;
+        }
+    }
+    return -1;
+}
+#endif
+
 } // namespace
 
 int main()
@@ -133,6 +168,19 @@ int main()
     FileReader reader = std::move(opened).value();
     expect(reader.is_open(), "successful reader owns a handle");
     expect(reader.size() == known.size(), "actual file length is retained");
+
+#if defined(__linux__)
+    const int descriptor = find_descriptor_for(file_path);
+    expect(descriptor >= 0, "Linux reader owns a descriptor for the opened file");
+    if (descriptor >= 0) {
+        const int status_flags = ::fcntl(descriptor, F_GETFL);
+        const int descriptor_flags = ::fcntl(descriptor, F_GETFD);
+        expect(status_flags >= 0 && (status_flags & O_ACCMODE) == O_RDONLY,
+               "Linux descriptor is opened read-only");
+        expect(descriptor_flags >= 0 && (descriptor_flags & FD_CLOEXEC) != 0,
+               "Linux descriptor is close-on-exec");
+    }
+#endif
 
     std::array<std::byte, 3> middle{};
     const auto middle_read = reader.read_at(1, middle);
@@ -248,7 +296,8 @@ int main()
     const auto unicode_path = temporary.path()
         / std::filesystem::path{L"\u97F3\u58F0-\u8AAD\u53D6.bin"};
 #else
-    const auto unicode_path = temporary.path() / "unicode-reader.bin";
+    const auto unicode_path = temporary.path()
+        / std::filesystem::path{u8"\u97F3\u58F0-\u8AAD\u53D6.bin"};
 #endif
     write_bytes(unicode_path, known);
     auto unicode_open = FileReader::open(unicode_path);

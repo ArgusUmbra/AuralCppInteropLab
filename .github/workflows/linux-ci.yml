@@ -1,0 +1,75 @@
+name: Linux C++ CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: GCC
+            preset: linux-gcc-debug
+            compiler_package: g++-14
+            compiler: g++-14
+            analyzer: true
+          - name: Clang
+            preset: linux-clang-debug
+            compiler_package: clang-18
+            compiler: clang++-18
+            analyzer: false
+          - name: Clang ASan + UBSan
+            preset: linux-clang-sanitizers
+            compiler_package: clang-18
+            compiler: clang++-18
+            analyzer: false
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            cmake \
+            ninja-build \
+            libssl-dev \
+            zlib1g-dev \
+            ${{ matrix.compiler_package }}
+
+      - name: Configure
+        run: >-
+          cmake --preset ${{ matrix.preset }}
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+
+      - name: Build with strict warnings
+        run: cmake --build --preset ${{ matrix.preset }}
+
+      - name: Verify 42 frozen inputs
+        run: ctest --preset ${{ matrix.preset }} -R '^frozen_input_checksums$'
+
+      - name: Run native tests
+        run: ctest --preset ${{ matrix.preset }}
+
+      - name: Configure GCC analyzer
+        if: matrix.analyzer
+        run: >-
+          cmake --preset linux-gcc-analyzer
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+
+      - name: Build with GCC analyzer
+        if: matrix.analyzer
+        run: cmake --build --preset linux-gcc-analyzer

@@ -46,8 +46,31 @@ chunked to the native `ssize_t` limit and must return the exact requested byte
 count. Device/inode, mode, size, modification time, and change time are checked.
 CMake defines `_FILE_OFFSET_BITS=64` for UNIX builds.
 
+Linux tests inspect the owned descriptor through `/proc/self/fd` to confirm
+read-only access and close-on-exec, exercise a non-ASCII UTF-8 path, exact and
+EOF reads, changing offsets, move ownership, cleanup, and detectable
+truncation. The retry loops for `EINTR` are code-reviewed but not fault-injected:
+regular-file `open`, `fstat`, and `pread` cannot be interrupted reliably in a
+portable deterministic test.
+
 Calls to `read_at` on one POSIX reader do not mutate a shared file position.
 Moving or destroying a reader concurrently with a read is not supported.
+
+## GCC analyzer disposition
+
+GCC 15 `-fanalyzer` reports `-Wanalyzer-use-of-uninitialized-value` at both
+`FileResult<FileReader>::success` and `FileResult<FileReader>::failure` return
+expressions. The failure path never constructs or accesses a `FileReader`, and
+explicitly initializing the optional's active and inactive states does not
+change the diagnostic. Normal strict-warning builds and ownership tests pass.
+This is therefore treated as a GCC analysis false positive around returning a
+result that contains `std::optional` storage for a move-only type, not as an
+observed initialization or ownership defect.
+
+The analyzer preset keeps `-fanalyzer` enabled across the library target and
+relaxes `-Werror` only for that named diagnostic in `file_reader.cpp`, so it
+remains visible in CI. All other compiler and analyzer warnings remain errors.
+This exception should be revisited when the CI GCC major version changes.
 
 ## Consistency limits
 

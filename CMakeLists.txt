@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(AURAL_ENABLE_SANITIZERS "Enable Clang AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+option(AURAL_ENABLE_GCC_ANALYZER "Enable GCC's interprocedural static analyzer" OFF)
+
 find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
 find_package(ZLIB REQUIRED)
 
@@ -23,6 +26,32 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     )
 endif()
 
+if(AURAL_ENABLE_SANITIZERS)
+    if(NOT UNIX OR NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "AURAL_ENABLE_SANITIZERS requires Clang on a UNIX platform")
+    endif()
+    target_compile_options(
+        aural_project_warnings
+        INTERFACE
+            -fsanitize=address,undefined
+            -fno-sanitize-recover=undefined
+            -fno-omit-frame-pointer
+            -g
+    )
+    target_link_options(
+        aural_project_warnings
+        INTERFACE
+            -fsanitize=address,undefined
+            -fno-sanitize-recover=undefined
+    )
+endif()
+
+if(AURAL_ENABLE_GCC_ANALYZER)
+    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        message(FATAL_ERROR "AURAL_ENABLE_GCC_ANALYZER requires GCC")
+    endif()
+endif()
+
 add_library(
     aural_core
     src/core/file_reader.cpp
@@ -36,6 +65,17 @@ target_include_directories(
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 target_link_libraries(aural_core PRIVATE aural_project_warnings)
+if(AURAL_ENABLE_GCC_ANALYZER)
+    target_compile_options(aural_core PRIVATE -fanalyzer)
+    # GCC 15 falsely reports optional<FileReader>'s inactive storage in both
+    # FileResult success and failure factory return paths. Keep it visible, but
+    # non-fatal only for the translation unit that instantiates those paths.
+    set_property(
+        SOURCE src/core/file_reader.cpp
+        APPEND PROPERTY COMPILE_OPTIONS
+            -Wno-error=analyzer-use-of-uninitialized-value
+    )
+endif()
 if(UNIX)
     target_compile_definitions(aural_core PRIVATE _FILE_OFFSET_BITS=64)
 endif()

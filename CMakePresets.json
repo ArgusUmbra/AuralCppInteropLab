@@ -27,6 +27,46 @@
         "CMAKE_CXX_COMPILER": "g++.exe",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
+    },
+    {
+      "name": "linux-gcc-debug",
+      "displayName": "Linux GCC - Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "linux-clang-debug",
+      "displayName": "Linux Clang - Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "linux-clang-sanitizers",
+      "displayName": "Linux Clang ASan and UBSan",
+      "inherits": "linux-clang-debug",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "AURAL_ENABLE_SANITIZERS": "ON"
+      }
+    },
+    {
+      "name": "linux-gcc-analyzer",
+      "displayName": "Linux GCC static analyzer",
+      "inherits": "linux-gcc-debug",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "AURAL_ENABLE_GCC_ANALYZER": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -37,6 +77,22 @@
     {
       "name": "ucrt64-release",
       "configurePreset": "ucrt64-release"
+    },
+    {
+      "name": "linux-gcc-debug",
+      "configurePreset": "linux-gcc-debug"
+    },
+    {
+      "name": "linux-clang-debug",
+      "configurePreset": "linux-clang-debug"
+    },
+    {
+      "name": "linux-clang-sanitizers",
+      "configurePreset": "linux-clang-sanitizers"
+    },
+    {
+      "name": "linux-gcc-analyzer",
+      "configurePreset": "linux-gcc-analyzer"
     }
   ],
   "testPresets": [
@@ -50,6 +106,31 @@
     {
       "name": "ucrt64-release",
       "configurePreset": "ucrt64-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-gcc-debug",
+      "configurePreset": "linux-gcc-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-clang-debug",
+      "configurePreset": "linux-clang-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-clang-sanitizers",
+      "configurePreset": "linux-clang-sanitizers",
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=1:halt_on_error=1:strict_string_checks=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+      },
       "output": {
         "outputOnFailure": true
       }

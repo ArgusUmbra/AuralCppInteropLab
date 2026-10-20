@@ -19,22 +19,64 @@ are frozen here. Existing verifier source, implementation tests, adapters,
 internal helpers, runners, and fixture generators are excluded. See
 `docs/CLEAN-ROOM-METHODOLOGY.md`.
 
-## Build requirements
+## CI status
 
-- C++20 compiler (validated with MSYS2 UCRT64 GCC 15.2.0)
-- CMake (validated with 4.2.3)
-- Ninja (validated with 1.13.2)
-- OpenSSL Crypto (validated with 3.6.1)
-- zlib (validated with 1.3.2)
+[![Linux C++ CI](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml)
 
-For MSYS2 UCRT64, prepend `C:\msys64\ucrt64\bin` and
-`C:\msys64\usr\bin` to the current process `PATH`, then run:
+The Linux workflow is configured for GCC 14, Clang 18, and Clang 18 with
+AddressSanitizer plus UndefinedBehaviorSanitizer. Its result is pending the
+first GitHub-hosted execution; the presence of this workflow is not a claim
+that Linux CI passes.
+
+## Build and test
+
+The project requires a C++20 compiler, CMake 3.25 or newer, Ninja, OpenSSL 3
+development files, and zlib development files. Strict warnings are errors in
+all supported GCC, Clang, and MSVC configurations.
+
+On Ubuntu 24.04, install the native dependencies and choose either compiler
+preset:
+
+```bash
+sudo apt-get update
+sudo apt-get install --no-install-recommends cmake ninja-build \
+  libssl-dev zlib1g-dev g++ clang
+
+cmake --preset linux-gcc-debug
+cmake --build --preset linux-gcc-debug
+ctest --preset linux-gcc-debug
+
+cmake --preset linux-clang-debug
+cmake --build --preset linux-clang-debug
+ctest --preset linux-clang-debug
+```
+
+For Clang memory- and undefined-behavior diagnostics, use the dedicated preset.
+It enables debug symbols, frame pointers, ASan, UBSan, leak detection, and
+failure on the first undefined-behavior diagnostic:
+
+```bash
+cmake --preset linux-clang-sanitizers
+cmake --build --preset linux-clang-sanitizers
+ctest --preset linux-clang-sanitizers
+```
+
+On Windows with MSYS2 UCRT64, prepend `C:\msys64\ucrt64\bin` and
+`C:\msys64\usr\bin` to the current process `PATH`, then test both build types:
 
 ```powershell
 cmake --preset ucrt64-debug
 cmake --build --preset ucrt64-debug
 ctest --preset ucrt64-debug
+
+cmake --preset ucrt64-release
+cmake --build --preset ucrt64-release
+ctest --preset ucrt64-release
 ```
+
+The verified platform is Windows with MSYS2 UCRT64 GCC 15.2.0, CMake 4.2.3,
+Ninja 1.13.2, OpenSSL 3.6.1, and zlib 1.3.2. Ubuntu 24.04 with GCC, Clang, and
+the Clang sanitizers is configured but remains awaiting its first CI execution.
 
 ## Reusable library
 
