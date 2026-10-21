@@ -8,7 +8,7 @@ Reader Draft 0.2 verification and Adapter Protocol 1 interoperability, not
 source compatibility with any existing implementation.
 
 The baseline is the public repository commit
-`b2b60b38989ddca9f692a6f1b7b919c5850ec11f`. Its selected public materials are
+`08abcc36c6159fbe0b98287999857d5f971bcf9d`. Its selected public materials are
 frozen byte-for-byte under `frozen-input/source/` and may not be changed or
 rebaselined without an explicit later assignment.
 

@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path, PurePosixPath
 
 
-SOURCE_COMMIT = "b2b60b38989ddca9f692a6f1b7b919c5850ec11f"
+SOURCE_COMMIT = "08abcc36c6159fbe0b98287999857d5f971bcf9d"
 SOURCE_URL = "https://github.com/ArgusUmbra/AuralOpenStandard.git"
 
 DOCUMENT_PATHS = (
@@ -41,9 +41,11 @@ REQUIRED_FIXTURES = (
     "invalid-local-central-crc.aural",
     "invalid-malformed-json.aural",
     "invalid-malformed-local-header.aural",
+    "invalid-missing-required-zip64-end.aural",
     "invalid-negative-zero.aural",
     "invalid-noncanonical.aural",
     "invalid-noncharacter.aural",
+    "invalid-redundant-zip64-end.aural",
     "invalid-special-file.aural",
     "invalid-trailer.aural",
     "invalid-unknown-member.aural",
@@ -55,6 +57,7 @@ REQUIRED_FIXTURES = (
     "invalid-version.aural",
     "valid-independent.aural",
     "valid-minimal.aural",
+    "valid-required-zip64-end.aural",
     "valid-unicode.aural",
     "valid-unknown-optional.aural",
 )

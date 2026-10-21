@@ -3,11 +3,22 @@
 ## Snapshot boundary
 
 `frozen-input/source/` contains raw blobs selected from public commit
-`b2b60b38989ddca9f692a6f1b7b919c5850ec11f`. Each original repository path is
+`08abcc36c6159fbe0b98287999857d5f971bcf9d`. Each original repository path is
 mapped to `frozen-input/source/<original-path>`. The inventory contains public
-specification/conformance material, 30 required Core Reader fixtures, and two
-optional Draft 0.1 fixtures. The optional fixtures remain under the original
-path and are classified as optional in `SOURCE-SNAPSHOT.json`.
+specification/conformance material, 33 required Core Reader fixtures, and two
+optional Draft 0.1 fixtures. It has 45 files and aggregate SHA-256
+`a0cecc4594a5098ea236b7cc900d27e4a7c5bd61a70cff9bcbb3dbd21cf499e5`.
+The optional fixtures remain under the original path and are classified as
+optional in `SOURCE-SNAPSHOT.json`.
+
+The 33-case profile adds `valid-required-zip64-end.aural`,
+`invalid-redundant-zip64-end.aural`, and
+`invalid-missing-required-zip64-end.aural`. The refreshed specification and
+conformance material state the strict necessity policy recorded by the
+authoritative repository's design decision D-012: classic EOCD sentinels
+require the ZIP64 EOCD/locator chain, that chain is forbidden without a
+sentinel, and local and central ZIP64 extra fields are independently limited
+to sentinel-required values in APPNOTE order.
 
 `.gitattributes` marks every file below `frozen-input/source/` as `-text`, so
 Git does not translate line endings. The freeze tool obtains each file through
@@ -37,7 +48,7 @@ required source commit, run:
 python tools/freeze_public_snapshot.py `
   --source-repo C:\path\to\aural-open-standard `
   --output frozen-input `
-  --freeze-date 2026-10-20
+  --freeze-date 2026-10-21
 ```
 
 The command verifies the commit object, reads the allowlisted paths as raw Git

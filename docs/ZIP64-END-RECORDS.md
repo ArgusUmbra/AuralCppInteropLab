@@ -62,24 +62,23 @@ allocation failures remain separate result categories. Both the standalone
 inspector and the central parser can use the same already-open `FileReader`,
 so no archive is independently reopened between these stages.
 
-## Unnecessary archive-level ZIP64 ambiguity
+## Strict ZIP64 necessity policy
 
-The frozen AURAL text is explicit for entry extra fields: a ZIP64 `0x0001`
-extra may occur only when a corresponding classic field is a sentinel. The
-archive-level wording is less explicit. Section 6.1 says ZIP64 records may
-appear only as allowed later; section 6.4 requires the ZIP64 EOCD and locator
-when the classic EOCD uses a sentinel, but does not state the converse as an
-independent `MUST NOT`. Section 9 also observes that permitted ZIP64 choices
-can change whole-archive bytes.
+The frozen AURAL text now makes the rule recorded by authoritative design
+decision D-012 explicit. If any classic EOCD count, size, offset, or disk field
+uses its ZIP64 sentinel, the ZIP64 EOCD and locator are required. If no classic
+EOCD field uses a sentinel, both ZIP64 end records are prohibited. Local and
+central ZIP64 `0x0001` extra fields follow an independent per-header necessity
+rule: every sentinel-required value is present in APPNOTE order, no
+non-required value or trailing byte is present, and the field is absent when
+that header has no corresponding sentinel.
 
-This implementation follows the fail-closed layout reading for Draft 0.2:
-without an EOCD sentinel, the central directory must end directly at the
-classic EOCD, so an unnecessary ZIP64 EOCD/locator chain is rejected as a gap
-or undeclared bytes. That treatment is consistent with “MAY appear only as
-allowed below,” but the absence of an explicit archive-level converse leaves
-a normative ambiguity. The authoritative standard should clarify whether an
-otherwise consistent ZIP64 envelope is permitted when no classic EOCD field
-needs expansion.
+The existing archive-level inspector is consistent with this clarification.
+It requires the chain whenever a classic EOCD sentinel is present, while a
+redundant chain leaves undeclared bytes between the central directory and
+classic EOCD and is rejected by the exact-end boundary check. No parser change
+is needed for the archive-level rule. Per-entry ZIP64 extra-field resolution
+and its exact necessity checks remain deliberately unimplemented.
 
 ## Remaining ZIP64 work
 

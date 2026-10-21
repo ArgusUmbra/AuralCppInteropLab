@@ -1,17 +1,17 @@
 {
   "schema": "org.aural.cpp-interop.frozen-source-snapshot",
   "schema_version": 1,
-  "freeze_date": "2026-10-20",
+  "freeze_date": "2026-10-21",
   "source_repository": {
     "url": "https://github.com/ArgusUmbra/AuralOpenStandard.git",
-    "commit": "b2b60b38989ddca9f692a6f1b7b919c5850ec11f"
+    "commit": "08abcc36c6159fbe0b98287999857d5f971bcf9d"
   },
   "path_mapping": "prefix each original repository path with source/",
   "aggregate": {
     "algorithm": "SHA-256 of SHA256SUMS.txt; entries are sorted by frozen path and encoded as lowercase-digest + two spaces + forward-slash path + LF",
-    "sha256": "fa36a6df485b1a542b140095a84969e876e9cc9247a9f93da6715be54f6fc0f9"
+    "sha256": "a0cecc4594a5098ea236b7cc900d27e4a7c5bd61a70cff9bcbb3dbd21cf499e5"
   },
-  "file_count": 42,
+  "file_count": 45,
   "files": [
     {
       "source_path": "LICENSE",
@@ -24,35 +24,35 @@
       "source_path": "docs/CONFORMANCE-ADAPTER-PROTOCOL-1-EXPERIMENTAL.md",
       "frozen_path": "source/docs/CONFORMANCE-ADAPTER-PROTOCOL-1-EXPERIMENTAL.md",
       "length": 8861,
-      "sha256": "cb2c64c0b50e834666804bde5519f5aff5244361a9d76c9b2e4a8788b409817b",
+      "sha256": "a96e627e1190dff770c97240d1fe0bdf66ecb43052114a46fa7978ccb388ffc3",
       "classification": "published-document-or-metadata"
     },
     {
       "source_path": "docs/CONFORMANCE-KIT.md",
       "frozen_path": "source/docs/CONFORMANCE-KIT.md",
-      "length": 17648,
-      "sha256": "c5b966ebec00f2524ae6245aaa25034011fab2ef6b849b2388ac5122dc74a60a",
+      "length": 17708,
+      "sha256": "f554d5e906688d9d372e7914b61ddb9414157879c5a1007966c13d7ffe45ab19",
       "classification": "published-document-or-metadata"
     },
     {
       "source_path": "docs/CONFORMANCE.md",
       "frozen_path": "source/docs/CONFORMANCE.md",
-      "length": 6740,
-      "sha256": "cce2a4bc9977661651c2834504b16ce1e05e87cb7811cf53c1437ab51cdba29c",
+      "length": 7254,
+      "sha256": "f8fa0909e83447c46474dd9f853e81d4b2df758649bc65a0cb34936d8c45d1ac",
       "classification": "published-document-or-metadata"
     },
     {
       "source_path": "docs/INTEROPERABILITY.md",
       "frozen_path": "source/docs/INTEROPERABILITY.md",
-      "length": 6875,
-      "sha256": "a3650c2ccf6d71d97327b7cad1231768f22c83a1b23e5d7e3a8c76abb0e05923",
+      "length": 6907,
+      "sha256": "d82bc14047afa2516e6c93e5184050317972de30254ef2abd71d2c94243408d0",
       "classification": "published-document-or-metadata"
     },
     {
       "source_path": "docs/SPECIFICATION-0.2-DRAFT.md",
       "frozen_path": "source/docs/SPECIFICATION-0.2-DRAFT.md",
-      "length": 16399,
-      "sha256": "5340153f0e19046cd496ea77e9c268ef654c3a2fc114caad3fc0dac9cac12016",
+      "length": 17180,
+      "sha256": "6723dd90cbd49312aab18e01cc8ab8d440073c5761c01babdfdd85fa779e44d1",
       "classification": "published-document-or-metadata"
     },
     {
@@ -65,15 +65,15 @@
     {
       "source_path": "tests/fixtures/conformance/core-reader-0.2-cases.v1.json",
       "frozen_path": "source/tests/fixtures/conformance/core-reader-0.2-cases.v1.json",
-      "length": 22105,
-      "sha256": "eea283420315768e4bce2d5824408d671d34c08db06482da845d75dc3118e204",
+      "length": 24220,
+      "sha256": "62b94aa4ce6d3acf6a8da04c35220e89102d831f73f8e9baf189a975fb1c0aa0",
       "classification": "published-document-or-metadata"
     },
     {
       "source_path": "tests/fixtures/conformance/expected.json",
       "frozen_path": "source/tests/fixtures/conformance/expected.json",
-      "length": 7246,
-      "sha256": "6a0d2ed75e2aced279cc8964c9a3c47962a6decad874a44b1e5d9fdb976e8aa3",
+      "length": 8005,
+      "sha256": "27603a5f1f199caf2a2ece0d7a4c808aeadfda5cbe3f445ec7ac807d09daf916",
       "classification": "published-document-or-metadata"
     },
     {
@@ -182,6 +182,13 @@
       "classification": "required-core-reader-fixture"
     },
     {
+      "source_path": "tests/fixtures/conformance/invalid-missing-required-zip64-end.aural",
+      "frozen_path": "source/tests/fixtures/conformance/invalid-missing-required-zip64-end.aural",
+      "length": 549,
+      "sha256": "fb6db3b8a5aa22d4a8bd15c6e764ad876188667500deadd46608f542f03c0368",
+      "classification": "required-core-reader-fixture"
+    },
+    {
       "source_path": "tests/fixtures/conformance/invalid-negative-zero.aural",
       "frozen_path": "source/tests/fixtures/conformance/invalid-negative-zero.aural",
       "length": 549,
@@ -200,6 +207,13 @@
       "frozen_path": "source/tests/fixtures/conformance/invalid-noncharacter.aural",
       "length": 566,
       "sha256": "1bfe15553eadd4c83ffb4185c12e816d50fb5cfff0f9fd52a33d43837b19d5e2",
+      "classification": "required-core-reader-fixture"
+    },
+    {
+      "source_path": "tests/fixtures/conformance/invalid-redundant-zip64-end.aural",
+      "frozen_path": "source/tests/fixtures/conformance/invalid-redundant-zip64-end.aural",
+      "length": 625,
+      "sha256": "4950711ac54d29564b437e38383c5aa69c4f7fed732ab2deb7b1394a76e1201d",
       "classification": "required-core-reader-fixture"
     },
     {
@@ -291,6 +305,13 @@
       "frozen_path": "source/tests/fixtures/conformance/valid-minimal.aural",
       "length": 549,
       "sha256": "aae82053118bedd4ab55c32322aeab7219ac2f4fced5847eee6d07215feda6a3",
+      "classification": "required-core-reader-fixture"
+    },
+    {
+      "source_path": "tests/fixtures/conformance/valid-required-zip64-end.aural",
+      "frozen_path": "source/tests/fixtures/conformance/valid-required-zip64-end.aural",
+      "length": 625,
+      "sha256": "c4b2019336614e509388f04ddefeef5311052a3a81355892869c16bef621866b",
       "classification": "required-core-reader-fixture"
     },
     {

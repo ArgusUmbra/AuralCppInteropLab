@@ -33,7 +33,7 @@ internal helpers, runners, and fixture generators are excluded. See
 [![Linux C++ CI](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml)
 
 The Linux workflow is configured for GCC 14, Clang 18, and Clang 18 with
-AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `0b8e0f2`
+AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `e849d4e`
 passed all three jobs, including the GCC analyzer. Uncommitted work in a local
 tree has not run in GitHub Actions and must not be described as CI-tested.
 
@@ -85,7 +85,7 @@ ctest --preset ucrt64-release
 
 The verified platform is Windows with MSYS2 UCRT64 GCC 15.2.0, CMake 4.2.3,
 Ninja 1.13.2, OpenSSL 3.6.1, and zlib 1.3.2. Ubuntu 24.04 with GCC, Clang, and
-the Clang sanitizers passed for baseline commit `0b8e0f2`.
+the Clang sanitizers passed for baseline commit `e849d4e`.
 
 ## Reusable library
 

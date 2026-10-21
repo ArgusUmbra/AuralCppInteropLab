@@ -58,7 +58,7 @@ jobs:
       - name: Build with strict warnings
         run: cmake --build --preset ${{ matrix.preset }}
 
-      - name: Verify 42 frozen inputs
+      - name: Verify 45 frozen inputs
         run: ctest --preset ${{ matrix.preset }} -R '^frozen_input_checksums$'
 
       - name: Run native tests

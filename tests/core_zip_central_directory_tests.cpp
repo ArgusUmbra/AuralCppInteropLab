@@ -451,6 +451,27 @@ void test_frozen_examples(const std::filesystem::path& fixture_directory)
     require(valid.structurally_valid() && valid.directory->entries.size() == 2U,
             "frozen independent classic package has valid central structure");
 
+    const auto required_zip64 = inspect_classic_central_directory(
+        fixture_directory / "valid-required-zip64-end.aural");
+    require(required_zip64.structurally_valid()
+                && required_zip64.directory->uses_zip64
+                && required_zip64.directory->entries.size() == 2U,
+            "frozen required ZIP64 end-record chain is structurally valid");
+
+    const auto missing_zip64 = inspect_classic_central_directory(
+        fixture_directory / "invalid-missing-required-zip64-end.aural");
+    require(missing_zip64.status == CentralDirectoryStatus::invalid_structure
+                && missing_zip64.error->code
+                    == CentralDirectoryErrorCode::zip64_locator_missing,
+            "frozen missing required ZIP64 chain is structurally rejected");
+
+    const auto redundant_zip64 = inspect_classic_central_directory(
+        fixture_directory / "invalid-redundant-zip64-end.aural");
+    require(redundant_zip64.status == CentralDirectoryStatus::invalid_structure
+                && redundant_zip64.error->code
+                    == CentralDirectoryErrorCode::central_directory_end_mismatch,
+            "frozen redundant ZIP64 chain is structurally rejected");
+
     const auto compression = inspect_classic_central_directory(
         fixture_directory / "invalid-compression.aural");
     require(compression.structurally_valid()
