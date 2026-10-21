@@ -2,7 +2,6 @@
 
 #include "../utf8_internal.hpp"
 
-#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -143,9 +142,6 @@ JsonStringDecodeResult decode_json_string(
     }
 
     std::u8string output;
-    const auto possible_payload = input.size() >= 2U ? input.size() - 2U : 0U;
-    output.reserve(std::min(possible_payload, limits.max_decoded_bytes));
-
     std::size_t offset = 1;
     while (offset < input.size()) {
         const auto current = byte_value(input[offset]);

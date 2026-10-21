@@ -57,6 +57,7 @@ add_library(
     src/core/file_reader.cpp
     src/core/json/json_primitive_parser.cpp
     src/core/json/json_string_decoder.cpp
+    src/core/json/json_value_parser.cpp
     src/core/range.cpp
     src/core/utf8.cpp
 )
@@ -161,6 +162,14 @@ if(BUILD_TESTING)
             aural_project_warnings
     )
 
+    add_executable(core_json_value_tests tests/core_json_value_tests.cpp)
+    target_link_libraries(
+        core_json_value_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
+    )
+
     add_test(NAME executable_startup COMMAND aural_lab)
     set_tests_properties(
         executable_startup
@@ -210,5 +219,11 @@ if(BUILD_TESTING)
     set_tests_properties(
         core_json_primitives
         PROPERTIES PASS_REGULAR_EXPRESSION "CORE_JSON_PRIMITIVE_TESTS_OK"
+    )
+
+    add_test(NAME core_json_values COMMAND core_json_value_tests)
+    set_tests_properties(
+        core_json_values
+        PROPERTIES PASS_REGULAR_EXPRESSION "CORE_JSON_VALUE_TESTS_OK"
     )
 endif()

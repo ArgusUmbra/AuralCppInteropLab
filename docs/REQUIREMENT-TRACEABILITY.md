@@ -13,7 +13,7 @@ requirement is implemented or tested.
 | Unicode scalar values only; no UTF-8 surrogate encodings or values above U+10FFFF | Specification §4.1 | `core_utf8_validation`: `test_invalid_scalars_and_policy` | Foundation tested |
 | All 66 Unicode noncharacters forbidden, including U+10FFFF | Specification §4.1; Unicode noncharacter definition | `core_utf8_validation`: literal boundaries plus exhaustive 66-value loops | Foundation tested |
 | Preserve Unicode as-is; do not normalize | Specification §4.1; RFC 8785 §3.1 | `core_utf8_validation`: precomposed/decomposed byte-preservation cases | Foundation tested |
-| UTF-8 validation is distinct from JSON control, escape, BOM, and syntax rules | Specification §4.1; RFC 8259 §§7-8 | Embedded-zero case and `docs/UTF8.md`; JSON cases remain planned | UTF-8 foundation tested; JSON planned |
+| UTF-8 validation is distinct from JSON control, escape, BOM, and syntax rules | Specification §4.1; RFC 8259 §§7-8 | Embedded-zero decoder case; `core_json_values` malformed UTF-8/escape integration cases | Foundation tested locally; new CI run pending |
 | Structured non-throwing UTF-8 failures with exact byte offsets | Engineering API requirement | `core_utf8_validation`: offset, length, observed-byte, prefix/suffix, and determinism cases | Foundation tested |
 | UTF-8 validation uses bounded caller storage and constant auxiliary memory | Specification §§6.6, 7, 10 | `core_utf8_validation`: zero-span, unchanged-input, 1 MiB boundary, sanitizer matrix after commit | Foundation tested locally; new sanitizer run pending |
 | RFC 8259 string quotes, escapes, controls, and bounded token consumption | Specification §4.1; RFC 8259 §7 | `core_json_string_decoder`: valid strings, escape matrix, truncation, exact consumption | Foundation tested |
@@ -24,13 +24,16 @@ requirement is implemented or tested.
 | AURAL integer-only domain, safe range, and negative-zero rejection | Specification §4.1 item 4; RFC 7493 §2.2 | `core_json_primitives`: exact ±(2^53−1), one beyond each edge, fraction, exponent, and `-0` cases | Foundation tested locally; new CI run pending |
 | Exact lowercase `true`, `false`, and `null` with bounded token consumption | RFC 8259 §3 | `core_json_primitives`: all literals, truncation, capitalization, mismatch, boundaries, and consumption | Foundation tested locally; new CI run pending |
 | Allocation-free primitive conversion, checked arithmetic, exact source token, structured byte offsets | Specification §§4.1, 6.6, 10 | `core_json_primitives`: hostile digits, unchanged input, source borrowing, determinism, limits, and offsets | Foundation tested locally; new sanitizer run pending |
-| Duplicate names, nesting, and complete manifest byte limit enforcement | Specification §4.1 | Future strict bounded JSON document parser tests | Frozen; planned |
+| Arrays, exact delimiters, whitespace, shared value dispatch, and complete consumption | Specification §4.1; RFC 8259 §§2-5 | `core_json_values`: empty/single/mixed/nested arrays, malformed delimiters, unsupported objects, extra tokens | Foundation tested locally; new CI run pending |
+| Container depth 32 with root container at depth 1 | Specification §4.1 item 5 | `core_json_values`: exact 32/33 boundary and hostile nesting | Foundation tested locally; new CI run pending |
+| Bounded complete input, aggregate decoded strings/value count, iterative parse stack, and no partial result | Specification §§4.1, 6.6, 10 | `core_json_values`: 1 MiB overflow, reduced budgets, 10,000 elements, failure/determinism checks | Foundation tested locally; new CI run pending |
+| Objects and decoded duplicate-name rejection | Specification §4.1 item 1 | Milestone 8C2B2B object parser tests | Frozen; planned |
 | Exact RFC 8785 canonical manifest bytes | Specification §4.2 | JCS component and canonicality vectors | Frozen; planned |
 | Manifest members, assets, timestamps, extensions | Specification §5 | Immutable manifest model and semantic tests | Frozen; planned |
 | ZIP records, names, header consistency, layout | Specification §§6.1-6.3 | Raw ZIP parser and malformed-layout tests | Frozen; planned |
 | Extra fields and ZIP64 sentinel resolution | Specification §6.4 | ZIP64 parser and boundary tests | Frozen; planned |
 | CRC32 and file metadata | Specification §6.5 | Streaming zlib integration and metadata tests | Dependency KAT only; planned |
-| Resource limits | Specification §6.6 | Bounded I/O, allocation, depth, and aggregate tests | Bounded native file I/O foundation tested; parser limits planned |
+| Resource limits | Specification §6.6 | Bounded I/O, allocation, depth, and aggregate tests | File I/O and JSON value/array foundations tested locally; new CI run pending |
 | Ordered package verification algorithm | Specification §7 | Package-verifier integration tests | Frozen; planned |
 | Version and optional Draft 0.1 behavior | Specification §8 | Version dispatch; optional legacy suite | Frozen; planned |
 | Canonical identity and deterministic output | Specification §9 | Identity/determinism tests | Frozen; planned |
