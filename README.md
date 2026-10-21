@@ -10,7 +10,8 @@ snapshot, a minimal native status executable, dependency known-answer tests,
 frozen-input integrity tests, checked byte ranges, a bounded read-only native
 file reader, strict AURAL-profile UTF-8 validation, bounded JSON string
 decoding, allocation-free strict JSON integer/literal parsing, and an internal
-bounded JSON value/array parser. It does
+bounded complete JSON parser with arrays, source-ordered objects, and decoded
+duplicate-name rejection. It does
 **not** contain an AURAL verifier and does not yet accept, reject, parse, or
 extract AURAL packages.
 

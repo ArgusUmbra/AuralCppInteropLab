@@ -198,8 +198,10 @@ void test_malformed_syntax_and_offsets()
     expect_error("[1,,2]", JsonValueErrorCode::expected_value, 3U);
     expect_error("[,1]", JsonValueErrorCode::expected_value, 1U);
     expect_error("]", JsonValueErrorCode::unexpected_closing_bracket, 0U);
-    expect_error("{}", JsonValueErrorCode::unsupported_object, 0U);
-    expect_error("[{}]", JsonValueErrorCode::unsupported_object, 1U);
+    require(parse_json_value(bytes("{}")).valid(),
+            "empty object must be accepted");
+    require(parse_json_value(bytes("[{}]")).valid(),
+            "object in array must be accepted");
     expect_error("true false", JsonValueErrorCode::unexpected_extra_token, 5U);
     expect_error("[]x", JsonValueErrorCode::unexpected_extra_token, 2U);
     expect_error("[\"\\x\"]", JsonValueErrorCode::string_error, 3U);
