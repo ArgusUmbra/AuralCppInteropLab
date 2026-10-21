@@ -22,7 +22,9 @@ The repository currently builds only:
   objects, decoded duplicate names, complete documents, and mixed containers.
   and
 - `core_json_canonicalization_foundations`, adversarial coverage for RFC 8785
-  decoded-string serialization and independent UTF-16 property ordering.
+  decoded-string serialization and independent UTF-16 property ordering; and
+- `core_json_document_canonicalization`, complete bounded RFC 8785 document
+  serialization coverage over the AURAL integer-only JSON model.
 
 There is no package verifier component yet.
 
@@ -33,7 +35,7 @@ There is no package verifier component yet.
 | Bounded file access | Read-only move-owned file handle, exact range reads, size/identity checks | Implemented; never allocates or reads from an unvalidated hostile length |
 | Checked arithmetic | Typed checked add/subtract/range conversion for offsets and lengths | Reject overflow, truncation, signed/unsigned ambiguity, and ZIP64 high-bit abuse |
 | UTF-8 and JSON | Strict UTF-8, bounded string-token decoding, allocation-free AURAL-profile primitives, and iterative owned arrays/objects with decoded duplicate-name rejection are implemented | 1 MiB source ceiling, depth 32, bounded aggregate values/members/decoded strings, no replacement decoding, normalization, floating-point coercion, or partial success |
-| RFC 8785 JCS | Canonical decoded-string serialization and non-mutating UTF-16 property ordering are implemented; complete document serialization and byte validation are planned | Bounded exact-size string allocation, validated scalar input, and a separate sorted index view |
+| RFC 8785 JCS | Canonical decoded-string serialization, non-mutating UTF-16 property ordering, and complete iterative document serialization are implemented; original-byte validation is planned | Validate/measure before exact output allocation, depth/value/string/output bounds, no partial success, and separate sorted index views |
 | Manifest model | Immutable validated Draft 0.2 values, paths, timestamps, extensions | Construct only after syntax, type, range, and semantic validation |
 | ZIP/ZIP64 records | Raw little-endian record parsing and cross-record consistency | Validate complete layout, sentinels, extras, offsets, sizes, names, flags, and metadata |
 | CRC32/SHA-256 streams | zlib CRC32 and OpenSSL EVP SHA-256 over bounded byte ranges | Stream fixed-size buffers; never buffer an entire hostile asset |

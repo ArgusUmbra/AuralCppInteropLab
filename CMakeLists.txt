@@ -90,6 +90,7 @@ endif()
 add_library(
     aural_core
     src/core/file_reader.cpp
+    src/core/json/canonical_json_document.cpp
     src/core/json/canonical_json_string.cpp
     src/core/json/json_primitive_parser.cpp
     src/core/json/json_property_order.cpp
@@ -229,6 +230,17 @@ if(BUILD_TESTING)
             aural_project_warnings
     )
 
+    add_executable(
+        core_json_document_canonicalization_tests
+        tests/core_json_document_canonicalization_tests.cpp
+    )
+    target_link_libraries(
+        core_json_document_canonicalization_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
+    )
+
     add_test(NAME executable_startup COMMAND aural_lab)
     set_tests_properties(
         executable_startup
@@ -304,5 +316,17 @@ if(BUILD_TESTING)
         core_json_canonicalization_foundations
         PROPERTIES
             PASS_REGULAR_EXPRESSION "CORE_JSON_CANONICALIZATION_TESTS_OK"
+    )
+
+    add_test(
+        NAME core_json_document_canonicalization
+        COMMAND
+            core_json_document_canonicalization_tests
+            "${CMAKE_CURRENT_SOURCE_DIR}/frozen-input/source/tests/fixtures/conformance/golden-manifest.json"
+    )
+    set_tests_properties(
+        core_json_document_canonicalization
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CORE_JSON_DOCUMENT_CANONICALIZATION_TESTS_OK"
     )
 endif()

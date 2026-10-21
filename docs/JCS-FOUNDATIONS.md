@@ -2,8 +2,9 @@
 
 `src/core/json/canonical_json_string.hpp` and
 `src/core/json/json_property_order.hpp` are internal, experimental components.
-They implement only canonical JSON string serialization and canonical object
-property ordering. They do not serialize complete JSON documents and do not
+They implement canonical JSON string serialization and canonical object
+property ordering. The complete serializer described in
+`CANONICAL-JSON-DOCUMENTS.md` reuses both foundations; none of these components
 establish manifest or package validity.
 
 ## Normative behavior
@@ -57,6 +58,6 @@ noncharacters, limit violations, and the offending side/member and byte offset
 are reported deterministically. Allocation failure remains an exceptional
 resource failure rather than malformed JSON.
 
-Full recursive JCS serialization, original-byte comparison, manifest semantic
-validation, and the eventual `aural::verify(path)` entry point remain future
-work.
+Complete iterative JCS serialization is now implemented separately.
+Original-byte comparison, manifest semantic validation, and the eventual
+`aural::verify(path)` entry point remain future work.

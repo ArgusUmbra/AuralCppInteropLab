@@ -12,7 +12,8 @@ file reader, strict AURAL-profile UTF-8 validation, bounded JSON string
 decoding, allocation-free strict JSON integer/literal parsing, and an internal
 bounded complete JSON parser with arrays, source-ordered objects, and decoded
 duplicate-name rejection, plus internal RFC 8785 decoded-string serialization
-and UTF-16 property-ordering foundations. It does
+and UTF-16 property-ordering foundations and complete bounded canonical JSON
+document serialization. It does
 **not** contain an AURAL verifier and does not yet accept, reject, parse, or
 extract AURAL packages.
 
@@ -29,7 +30,7 @@ internal helpers, runners, and fixture generators are excluded. See
 [![Linux C++ CI](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml)
 
 The Linux workflow is configured for GCC 14, Clang 18, and Clang 18 with
-AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `21382be`
+AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `d8eda16`
 passed all three jobs. Uncommitted work in a local tree has not run in GitHub
 Actions and must not be described as CI-tested.
 
@@ -159,9 +160,9 @@ verification of the input space, or a security guarantee.
 ## Limitations
 
 - The internal JSON layer parses complete bounded documents with arrays and
-  objects and provides canonical string/property-ordering foundations. Full
-  RFC 8785 document serialization, canonical-byte checking, and complete AURAL
-  manifest validation are not implemented.
+  objects and provides complete RFC 8785 serialization for AURAL's
+  integer-only value model. Original-byte canonicality checking and complete
+  AURAL manifest validation are not implemented.
 - No manifest, ZIP, ZIP64, WAV, or adapter implementation exists.
 - No package-verification API exists.
 - File consistency checks reduce, but cannot eliminate, concurrent-mutation
