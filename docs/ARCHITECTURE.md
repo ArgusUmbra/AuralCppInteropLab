@@ -27,6 +27,12 @@ The repository currently builds only:
   serialization coverage over the AURAL integer-only JSON model; and
 - `core_json_canonicality`, byte-for-byte canonicality, failure-taxonomy,
   resource-limit, immutability, and frozen-golden-manifest coverage.
+- `aural_core` also contains an internal Draft 0.2 manifest structure
+  validator over the owned JSON tree and a parse-once canonical-bytes plus
+  structure entry point; and
+- `core_manifest_structure`, adversarial coverage for the closed core shape,
+  field constraints, extension policy, safe paths, determinism, immutability,
+  combined-pipeline ordering, and the frozen golden manifest.
 
 There is no package verifier component yet.
 
@@ -38,7 +44,8 @@ There is no package verifier component yet.
 | Checked arithmetic | Typed checked add/subtract/range conversion for offsets and lengths | Reject overflow, truncation, signed/unsigned ambiguity, and ZIP64 high-bit abuse |
 | UTF-8 and JSON | Strict UTF-8, bounded string-token decoding, allocation-free AURAL-profile primitives, and iterative owned arrays/objects with decoded duplicate-name rejection are implemented | 1 MiB source ceiling, depth 32, bounded aggregate values/members/decoded strings, no replacement decoding, normalization, floating-point coercion, or partial success |
 | RFC 8785 JCS | Canonical decoded-string serialization, non-mutating UTF-16 property ordering, complete iterative document serialization, and original-byte validation are implemented | Validate/measure before exact output allocation, depth/value/string/output bounds, no partial success, first mismatch offset, and separate sorted index views |
-| Manifest model | Immutable validated Draft 0.2 values, paths, timestamps, extensions | Construct only after syntax, type, range, and semantic validation |
+| Manifest structure | Required/optional Draft 0.2 members, closed core objects, local field constraints, timestamps, and extensions | Implemented over a const owned JSON tree; success is structural only and cannot imply package validity |
+| Manifest semantic model | Immutable package-correlated Draft 0.2 values | Planned; construct only after archive agreement, hash, and cross-field validation |
 | ZIP/ZIP64 records | Raw little-endian record parsing and cross-record consistency | Validate complete layout, sentinels, extras, offsets, sizes, names, flags, and metadata |
 | CRC32/SHA-256 streams | zlib CRC32 and OpenSSL EVP SHA-256 over bounded byte ranges | Stream fixed-size buffers; never buffer an entire hostile asset |
 | Package verifier | Ordered orchestration of container, manifest, WAV identity, and integrity checks | No extraction; explicit typed result and controlled rejection |
