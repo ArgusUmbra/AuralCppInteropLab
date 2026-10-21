@@ -4,9 +4,9 @@
 
 The internal component in `src/core/zip/` is derived from AURAL Draft 0.2
 sections 6.1-6.6 and 7, the frozen conformance and interoperability documents,
-and PKWARE APPNOTE 6.3.10 sections 4.3.12, 4.3.16, and 4.4. It opens one path
-through `FileReader` and inspects only the classic End of Central Directory
-(EOCD) and the central-directory records it declares.
+and PKWARE APPNOTE 6.3.10 sections 4.3.12-4.3.16 and 4.4. It opens one path
+through `FileReader`, resolves the classic or ZIP64 end-record chain, and
+inspects the central-directory records it declares.
 
 A successful result means only that this bounded classic structure is
 self-consistent. It is not an AURAL package-verification result.
@@ -36,9 +36,10 @@ central file header retains:
 
 All multibyte values are decoded as unsigned little-endian values. Fixed and
 variable record regions must fit wholly inside the declared directory. The
-parsed record count must equal both single-disk EOCD counts. The directory must
-fit the physical file and end exactly where the terminal EOCD begins. A
-declared local-header fixed range must end before the directory, but its bytes
+parsed record count must equal both resolved single-disk counts. The directory
+must fit the physical file and end exactly where the applicable classic or
+ZIP64 end-record chain begins. A declared local-header fixed range must end
+before the directory, but its bytes
 are deliberately not read or validated in this milestone.
 
 ## AURAL limits and ordinary ZIP features
@@ -51,9 +52,10 @@ directory ceiling, and filename allocations are made only from already bounded
 record lengths. Entry storage is reserved only after the count ceiling passes.
 
 Single-disk structure is enforced now because split and spanned disks are
-outside the frozen profile. Classic sentinel values in EOCD or entry size,
-disk, count, or local-offset fields produce `zip64_support_required`, not a
-corruption result. This stage never parses or partly accepts a ZIP64 chain.
+outside the frozen profile. Classic EOCD sentinels are resolved through the
+required ZIP64 EOCD and locator. A sentinel in an entry size, disk, or local
+offset field produces `zip64_entry_resolution_pending`, never a partially
+valid directory. See `ZIP64-END-RECORDS.md` for the envelope rules.
 
 Ordinary ZIP metadata that AURAL later prohibits is retained rather than
 treated as structural corruption here. That includes non-stored compression,
@@ -65,8 +67,8 @@ attributes, and the exact two-entry inventory.
 ## Error and ownership model
 
 Expected outcomes are separated into structurally valid, invalid structure,
-ZIP64 support required, resource failure, and file failure. Structural and
-ZIP64 details carry the physical offset of the record or field responsible.
+ZIP64 entry resolution pending, resource failure, and file failure. Structural
+and ZIP64 details carry the physical offset of the responsible record or field.
 Native file details remain nested `FileError` values. Allocation failure is
 reported without a partial directory.
 
@@ -79,5 +81,5 @@ views into temporary I/O buffers.
 This milestone does not validate local-header signatures or equality, entry
 payload boundaries, contiguity of complete local records, entry data, CRC32,
 hashes, manifest agreement, WAVE identity, decompression, extraction, ZIP64
-records or extras, prefixes, or complete AURAL package validity. These remain
+entry extras, prefixes, or complete AURAL package validity. These remain
 separate verification stages.

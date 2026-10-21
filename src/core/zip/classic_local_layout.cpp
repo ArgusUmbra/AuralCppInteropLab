@@ -90,6 +90,14 @@ LocalLayoutInspection needs_zip64(const LocalZip64RequiredField field,
             std::nullopt};
 }
 
+LocalLayoutInspection entry_resolution_pending(const std::uint64_t offset)
+{
+    auto result = needs_zip64(LocalZip64RequiredField::central_directory,
+                              offset);
+    result.status = LocalLayoutStatus::zip64_entry_resolution_pending;
+    return result;
+}
+
 LocalLayoutInspection file_failure(const FileError error)
 {
     LocalLayoutInspection result{};
@@ -123,9 +131,8 @@ std::optional<LocalLayoutInspection> map_central_failure(
     case CentralDirectoryStatus::invalid_structure:
         return invalid(LocalLayoutErrorCode::central_directory_invalid,
                        central.error->offset, central.error);
-    case CentralDirectoryStatus::zip64_support_required:
-        return needs_zip64(LocalZip64RequiredField::central_directory,
-                           central.zip64->offset);
+    case CentralDirectoryStatus::zip64_entry_resolution_pending:
+        return entry_resolution_pending(central.zip64->offset);
     case CentralDirectoryStatus::resource_failure: {
         auto result = allocation_failure();
         result.central_resource = central.resource;

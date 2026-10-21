@@ -316,12 +316,9 @@ void test_eocd_fields_and_limits(const TemporaryDirectory& temporary)
 
     auto zip64 = make_archive({});
     set_u16(zip64, 10U, UINT16_MAX);
-    const auto zip64_result = inspect_bytes(temporary, "zip64-eocd.zip", zip64);
-    require(zip64_result.status == CentralDirectoryStatus::zip64_support_required
-                && zip64_result.zip64->field
-                    == Zip64RequiredField::eocd_total_entries
-                && zip64_result.zip64->offset == 10U,
-            "EOCD sentinel produces distinct ZIP64-required outcome");
+    require_error(inspect_bytes(temporary, "zip64-eocd.zip", zip64),
+                  CentralDirectoryErrorCode::zip64_locator_missing, 0U,
+                  "EOCD sentinel requires a ZIP64 locator");
 
     const auto empty = make_archive({});
     auto small_archive_limit = ClassicZipLimits{};
@@ -428,11 +425,12 @@ void test_counts_and_entry_zip64(const TemporaryDirectory& temporary)
     set_u32(zip64_entry, 30U + 20U, UINT32_MAX);
     const auto result = inspect_bytes(
         temporary, "zip64-entry.zip", zip64_entry);
-    require(result.status == CentralDirectoryStatus::zip64_support_required
+    require(result.status
+                == CentralDirectoryStatus::zip64_entry_resolution_pending
                 && result.zip64->field
                     == Zip64RequiredField::entry_compressed_size
                 && result.zip64->offset == 50U,
-            "entry sentinel produces distinct ZIP64-required outcome");
+            "entry sentinel produces distinct ZIP64-entry-pending outcome");
 
     EntrySpec first;
     first.name = byte_string({0x61U});

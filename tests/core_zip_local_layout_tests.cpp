@@ -473,10 +473,10 @@ void test_profile_features(const TemporaryDirectory& temporary)
     const auto central_zip64_result =
         inspect(temporary, "zip64-central.zip", zip64_central.bytes);
     require(central_zip64_result.status
-                == LocalLayoutStatus::zip64_support_required
+                == LocalLayoutStatus::zip64_entry_resolution_pending
                 && central_zip64_result.zip64->offset
                     == zip64_central.centrals[0] + 20U,
-            "central ZIP64 sentinel is explicit");
+            "central ZIP64 entry resolution is explicitly pending");
 }
 
 void test_ranges_and_layout(const TemporaryDirectory& temporary)

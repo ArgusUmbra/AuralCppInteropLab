@@ -14,8 +14,9 @@ bounded complete JSON parser with arrays, source-ordered objects, and decoded
 duplicate-name rejection, plus internal RFC 8785 decoded-string serialization,
 UTF-16 property-ordering foundations, complete bounded canonical JSON document
 serialization, and internal byte-for-byte canonical JSON verification. It also
-contains manifest-structure validation and bounded internal classic ZIP EOCD,
-central-directory, local-header, and physical-layout inspection. It does
+contains manifest-structure validation, bounded internal classic and ZIP64
+EOCD-chain inspection, and classic central-directory, local-header, and
+physical-layout inspection. It does
 **not** contain an AURAL package
 verifier and does not accept or extract AURAL packages.
 
@@ -32,7 +33,7 @@ internal helpers, runners, and fixture generators are excluded. See
 [![Linux C++ CI](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml)
 
 The Linux workflow is configured for GCC 14, Clang 18, and Clang 18 with
-AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `4b0e8dd`
+AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `0b8e0f2`
 passed all three jobs, including the GCC analyzer. Uncommitted work in a local
 tree has not run in GitHub Actions and must not be described as CI-tested.
 
@@ -84,7 +85,7 @@ ctest --preset ucrt64-release
 
 The verified platform is Windows with MSYS2 UCRT64 GCC 15.2.0, CMake 4.2.3,
 Ninja 1.13.2, OpenSSL 3.6.1, and zlib 1.3.2. Ubuntu 24.04 with GCC, Clang, and
-the Clang sanitizers passed for baseline commit `4b0e8dd`.
+the Clang sanitizers passed for baseline commit `0b8e0f2`.
 
 ## Reusable library
 
@@ -166,9 +167,10 @@ verification of the input space, or a security guarantee.
   value model, and verifies original bytes for canonicality. This does not
   validate authenticity, signatures, or a complete AURAL
   package.
-- Manifest structure and classic ZIP structure are separate internal
-  foundations. Classic local headers, central/local agreement, and physical
-  layout are validated, but ZIP64 parsing, complete package inventory and
+- Manifest structure and ZIP structure are separate internal foundations.
+  ZIP64 EOCD and locator metadata plus classic local headers, central/local
+  agreement, and physical layout are validated, but ZIP64 entry extra fields,
+  resolved entry/local integration, complete package inventory and
   metadata policy, CRC/hash verification, WAV validation, and the adapter do
   not exist.
 - No package-verification API exists.

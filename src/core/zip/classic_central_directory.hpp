@@ -50,13 +50,16 @@ struct ClassicCentralDirectory final {
     std::uint64_t eocd_offset;
     std::uint64_t eocd_size;
     std::uint16_t archive_comment_length;
+    bool uses_zip64;
+    std::optional<std::uint64_t> zip64_eocd_offset;
+    std::optional<std::uint64_t> zip64_locator_offset;
     std::vector<CentralDirectoryEntry> entries;
 };
 
 enum class CentralDirectoryStatus : std::uint8_t {
     structurally_valid,
     invalid_structure,
-    zip64_support_required,
+    zip64_entry_resolution_pending,
     resource_failure,
     file_failure,
 };
@@ -67,6 +70,19 @@ enum class CentralDirectoryErrorCode : std::uint8_t {
     eocd_not_found,
     eocd_record_truncated,
     eocd_not_terminal,
+    zip64_locator_missing,
+    zip64_locator_truncated,
+    invalid_zip64_locator_signature,
+    zip64_locator_offset_out_of_bounds,
+    zip64_locator_multidisk,
+    zip64_eocd_truncated,
+    invalid_zip64_eocd_signature,
+    invalid_zip64_eocd_size,
+    invalid_zip64_version_needed,
+    zip64_eocd_out_of_bounds,
+    zip64_eocd_end_mismatch,
+    zip64_eocd_multidisk,
+    classic_zip64_value_mismatch,
     multidisk_unsupported,
     central_directory_size_limit_exceeded,
     entry_count_limit_exceeded,

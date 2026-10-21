@@ -1,10 +1,9 @@
 #include "classic_central_directory.hpp"
 #include "classic_central_directory_internal.hpp"
+#include "zip64_end_records.hpp"
 
 #include <aural/core/range.hpp>
 
-#include <algorithm>
-#include <array>
 #include <limits>
 #include <new>
 #include <span>
@@ -13,10 +12,7 @@
 namespace aural::core::zip {
 namespace {
 
-constexpr std::uint32_t eocd_signature = UINT32_C(0x06054b50);
 constexpr std::uint32_t central_header_signature = UINT32_C(0x02014b50);
-constexpr std::uint64_t eocd_fixed_size = 22;
-constexpr std::uint64_t maximum_zip_comment_size = 65535;
 constexpr std::uint64_t central_header_fixed_size = 46;
 constexpr std::uint64_t local_header_fixed_size = 30;
 
@@ -57,10 +53,11 @@ CentralDirectoryInspection invalid(const CentralDirectoryErrorCode code,
             std::nullopt};
 }
 
-CentralDirectoryInspection needs_zip64(const Zip64RequiredField field,
-                                       const std::uint64_t offset)
+CentralDirectoryInspection entry_resolution_pending(
+    const Zip64RequiredField field,
+    const std::uint64_t offset)
 {
-    return {CentralDirectoryStatus::zip64_support_required,
+    return {CentralDirectoryStatus::zip64_entry_resolution_pending,
             std::nullopt,
             std::nullopt,
             Zip64Required{field, offset},
@@ -88,153 +85,26 @@ CentralDirectoryInspection allocation_failure()
             std::nullopt};
 }
 
-struct Eocd final {
-    std::uint64_t offset;
-    std::uint64_t size;
-    std::uint16_t disk_number;
-    std::uint16_t central_directory_disk;
-    std::uint16_t entries_on_disk;
-    std::uint16_t total_entries;
-    std::uint32_t central_directory_size;
-    std::uint32_t central_directory_offset;
-    std::uint16_t comment_length;
-};
-
-struct EocdSearch final {
-    std::optional<Eocd> eocd;
-    std::optional<CentralDirectoryInspection> failure;
-};
-
-EocdSearch find_eocd(const FileReader& reader)
-{
-    const std::uint64_t file_size = reader.size();
-    if (file_size < eocd_fixed_size) {
-        return {std::nullopt,
-                invalid(CentralDirectoryErrorCode::archive_too_small,
-                        file_size)};
-    }
-
-    const std::uint64_t maximum_search =
-        eocd_fixed_size + maximum_zip_comment_size;
-    const std::uint64_t search_size = std::min(file_size, maximum_search);
-    const std::uint64_t search_offset = file_size - search_size;
-    std::vector<std::byte> tail(static_cast<std::size_t>(search_size));
-    const auto read = reader.read_at(search_offset, tail);
-    if (!read) return {std::nullopt, file_failure(read.error())};
-
-    std::optional<std::uint64_t> truncated_signature;
-    std::optional<std::uint64_t> nonterminal_signature;
-    for (std::size_t index = tail.size() - 4U;; --index) {
-        if (read_u32(tail, index) == eocd_signature) {
-            const std::uint64_t absolute = search_offset + index;
-            const std::uint64_t remaining = tail.size() - index;
-            if (remaining < eocd_fixed_size) {
-                truncated_signature = absolute;
-            } else {
-                const std::uint16_t comment_length = read_u16(tail, index + 20U);
-                const auto record_end = checked_add(
-                    absolute, eocd_fixed_size + comment_length);
-                if (record_end && *record_end == file_size) {
-                    return {Eocd{absolute,
-                                 eocd_fixed_size + comment_length,
-                                 read_u16(tail, index + 4U),
-                                 read_u16(tail, index + 6U),
-                                 read_u16(tail, index + 8U),
-                                 read_u16(tail, index + 10U),
-                                 read_u32(tail, index + 12U),
-                                 read_u32(tail, index + 16U),
-                                 comment_length},
-                            std::nullopt};
-                }
-                if (record_end && *record_end < file_size) {
-                    nonterminal_signature = absolute;
-                } else {
-                    truncated_signature = absolute;
-                }
-            }
-        }
-        if (index == 0U) break;
-    }
-
-    if (nonterminal_signature) {
-        return {std::nullopt,
-                invalid(CentralDirectoryErrorCode::eocd_not_terminal,
-                        *nonterminal_signature)};
-    }
-    if (truncated_signature) {
-        return {std::nullopt,
-                invalid(CentralDirectoryErrorCode::eocd_record_truncated,
-                        *truncated_signature)};
-    }
-    return {std::nullopt,
-            invalid(CentralDirectoryErrorCode::eocd_not_found, search_offset)};
-}
-
-std::optional<CentralDirectoryInspection> validate_eocd_fields(
-    const Eocd& eocd,
-    const ClassicZipLimits& limits)
-{
-    if (eocd.disk_number == UINT16_MAX) {
-        return needs_zip64(Zip64RequiredField::eocd_disk_number,
-                           eocd.offset + 4U);
-    }
-    if (eocd.central_directory_disk == UINT16_MAX) {
-        return needs_zip64(Zip64RequiredField::eocd_central_directory_disk,
-                           eocd.offset + 6U);
-    }
-    if (eocd.entries_on_disk == UINT16_MAX) {
-        return needs_zip64(Zip64RequiredField::eocd_entries_on_disk,
-                           eocd.offset + 8U);
-    }
-    if (eocd.total_entries == UINT16_MAX) {
-        return needs_zip64(Zip64RequiredField::eocd_total_entries,
-                           eocd.offset + 10U);
-    }
-    if (eocd.central_directory_size == UINT32_MAX) {
-        return needs_zip64(Zip64RequiredField::eocd_central_directory_size,
-                           eocd.offset + 12U);
-    }
-    if (eocd.central_directory_offset == UINT32_MAX) {
-        return needs_zip64(Zip64RequiredField::eocd_central_directory_offset,
-                           eocd.offset + 16U);
-    }
-    if (eocd.disk_number != 0U || eocd.central_directory_disk != 0U
-        || eocd.entries_on_disk != eocd.total_entries) {
-        return invalid(CentralDirectoryErrorCode::multidisk_unsupported,
-                       eocd.offset + 4U);
-    }
-    if (eocd.central_directory_size > limits.maximum_central_directory_size) {
-        return invalid(
-            CentralDirectoryErrorCode::central_directory_size_limit_exceeded,
-            eocd.offset + 12U);
-    }
-    if (eocd.total_entries > limits.maximum_entry_count) {
-        return invalid(CentralDirectoryErrorCode::entry_count_limit_exceeded,
-                       eocd.offset + 10U);
-    }
-    return std::nullopt;
-}
-
 std::optional<CentralDirectoryInspection> check_entry_sentinels(
     const std::span<const std::byte> bytes,
     const std::size_t cursor,
     const std::uint64_t absolute)
 {
     if (read_u32(bytes, cursor + 20U) == UINT32_MAX) {
-        return needs_zip64(Zip64RequiredField::entry_compressed_size,
-                           absolute + 20U);
+        return entry_resolution_pending(
+            Zip64RequiredField::entry_compressed_size, absolute + 20U);
     }
     if (read_u32(bytes, cursor + 24U) == UINT32_MAX) {
-        return needs_zip64(Zip64RequiredField::entry_uncompressed_size,
-                           absolute + 24U);
+        return entry_resolution_pending(
+            Zip64RequiredField::entry_uncompressed_size, absolute + 24U);
     }
     if (read_u16(bytes, cursor + 34U) == UINT16_MAX) {
-        return needs_zip64(Zip64RequiredField::entry_disk_number,
-                           absolute + 34U);
+        return entry_resolution_pending(Zip64RequiredField::entry_disk_number,
+                                        absolute + 34U);
     }
     if (read_u32(bytes, cursor + 42U) == UINT32_MAX) {
-        return needs_zip64(Zip64RequiredField::entry_local_header_offset,
-                           absolute + 42U);
+        return entry_resolution_pending(
+            Zip64RequiredField::entry_local_header_offset, absolute + 42U);
     }
     return std::nullopt;
 }
@@ -243,43 +113,33 @@ CentralDirectoryInspection inspect_open_file(const FileReader& reader,
                                              const ClassicZipLimits& limits,
                                              const bool defer_local_overlap_checks)
 {
-    const std::uint64_t file_size = reader.size();
-    if (file_size > limits.maximum_archive_size) {
-        return invalid(CentralDirectoryErrorCode::archive_size_limit_exceeded,
-                       limits.maximum_archive_size);
+    auto end_inspection = inspect_zip_end_records_open(reader, limits);
+    if (!end_inspection.structurally_valid()) {
+        switch (end_inspection.status) {
+        case ZipEndRecordStatus::invalid_structure:
+            return invalid(end_inspection.error->code,
+                           end_inspection.error->offset);
+        case ZipEndRecordStatus::resource_failure:
+            return allocation_failure();
+        case ZipEndRecordStatus::file_failure:
+            return file_failure(*end_inspection.file_error);
+        case ZipEndRecordStatus::structurally_valid:
+            break;
+        }
     }
+    const auto& end_records = *end_inspection.records;
 
-    auto searched = find_eocd(reader);
-    if (!searched.eocd) return std::move(*searched.failure);
-    const Eocd eocd = *searched.eocd;
-    if (auto failure = validate_eocd_fields(eocd, limits)) {
-        return std::move(*failure);
-    }
-
-    const std::uint64_t directory_offset = eocd.central_directory_offset;
-    const std::uint64_t directory_size = eocd.central_directory_size;
-    const auto directory_range =
-        range_within_file(directory_offset, directory_size, file_size);
-    if (!directory_range) {
-        return invalid(CentralDirectoryErrorCode::central_directory_out_of_bounds,
-                       eocd.offset + 16U);
-    }
-    if (directory_range->overlaps(
-            *ByteRange::from_bounds(eocd.offset, eocd.offset + eocd.size))) {
-        return invalid(CentralDirectoryErrorCode::central_directory_overlaps_eocd,
-                       directory_offset);
-    }
-    if (directory_range->end() != eocd.offset) {
-        return invalid(CentralDirectoryErrorCode::central_directory_end_mismatch,
-                       directory_range->end());
-    }
+    const std::uint64_t file_size = end_records.file_size;
+    const std::uint64_t directory_offset =
+        end_records.central_directory_offset;
+    const std::uint64_t directory_size = end_records.central_directory_size;
 
     std::vector<std::byte> bytes(static_cast<std::size_t>(directory_size));
     const auto read = reader.read_at(directory_offset, bytes);
     if (!read) return file_failure(read.error());
 
     std::vector<CentralDirectoryEntry> entries;
-    entries.reserve(eocd.total_entries);
+    entries.reserve(static_cast<std::size_t>(end_records.entry_count));
     std::size_t cursor = 0;
     while (cursor < bytes.size()) {
         const std::uint64_t absolute = directory_offset + cursor;
@@ -379,18 +239,23 @@ CentralDirectoryInspection inspect_open_file(const FileReader& reader,
         cursor += static_cast<std::size_t>(*record_length);
     }
 
-    if (entries.size() != eocd.total_entries) {
+    if (entries.size() != end_records.entry_count) {
         return invalid(CentralDirectoryErrorCode::entry_count_mismatch,
-                       eocd.offset + 10U);
+                       end_records.uses_zip64
+                           ? *end_records.zip64_eocd_offset + 32U
+                           : end_records.eocd_offset + 10U);
     }
 
     ClassicCentralDirectory directory{
         file_size,
         directory_offset,
         directory_size,
-        eocd.offset,
-        eocd.size,
-        eocd.comment_length,
+        end_records.eocd_offset,
+        end_records.eocd_size,
+        end_records.archive_comment_length,
+        end_records.uses_zip64,
+        end_records.zip64_eocd_offset,
+        end_records.zip64_locator_offset,
         std::move(entries)};
     return {CentralDirectoryStatus::structurally_valid,
             std::move(directory),
@@ -442,6 +307,32 @@ std::string_view central_directory_error_message(
         return "EOCD record or declared comment is truncated";
     case CentralDirectoryErrorCode::eocd_not_terminal:
         return "bytes follow the declared EOCD record";
+    case CentralDirectoryErrorCode::zip64_locator_missing:
+        return "required ZIP64 EOCD locator is missing";
+    case CentralDirectoryErrorCode::zip64_locator_truncated:
+        return "required ZIP64 EOCD locator is truncated";
+    case CentralDirectoryErrorCode::invalid_zip64_locator_signature:
+        return "ZIP64 EOCD locator signature is invalid";
+    case CentralDirectoryErrorCode::zip64_locator_offset_out_of_bounds:
+        return "ZIP64 EOCD locator references an impossible record offset";
+    case CentralDirectoryErrorCode::zip64_locator_multidisk:
+        return "ZIP64 EOCD locator declares a multidisk archive";
+    case CentralDirectoryErrorCode::zip64_eocd_truncated:
+        return "ZIP64 EOCD record is truncated";
+    case CentralDirectoryErrorCode::invalid_zip64_eocd_signature:
+        return "ZIP64 EOCD record signature is invalid";
+    case CentralDirectoryErrorCode::invalid_zip64_eocd_size:
+        return "ZIP64 EOCD record is not the required version-1 size";
+    case CentralDirectoryErrorCode::invalid_zip64_version_needed:
+        return "ZIP64 EOCD version-needed field is not 4.5";
+    case CentralDirectoryErrorCode::zip64_eocd_out_of_bounds:
+        return "ZIP64 EOCD record is outside the physical archive";
+    case CentralDirectoryErrorCode::zip64_eocd_end_mismatch:
+        return "ZIP64 EOCD record does not end at its locator";
+    case CentralDirectoryErrorCode::zip64_eocd_multidisk:
+        return "ZIP64 EOCD record declares a multidisk archive";
+    case CentralDirectoryErrorCode::classic_zip64_value_mismatch:
+        return "classic EOCD and ZIP64 EOCD values contradict each other";
     case CentralDirectoryErrorCode::multidisk_unsupported:
         return "multidisk ZIP structure is unsupported";
     case CentralDirectoryErrorCode::central_directory_size_limit_exceeded:

@@ -12,7 +12,7 @@ Success means that the classic local records agree with their central records
 and satisfy the applicable Draft 0.2 physical ZIP profile. It is not complete
 AURAL package acceptance. Exact two-name inventory, regular-file attributes,
 manifest parsing/correlation, CRC32 computation, SHA-256, WAVE/RF64 identity,
-and ZIP64 record-chain validation remain later stages.
+and ZIP64 entry-extra resolution remain later stages.
 
 ## Validated records and consistency
 
@@ -44,17 +44,18 @@ Draft 0.2 choices relevant to local records and layout:
 - no prefix, gap, trailer, or undeclared byte between local entries, the
   central directory, and terminal EOCD.
 
-The classic central parser already requires a single disk, a terminal EOCD,
-and a central directory ending at that EOCD. This stage requires the first
+The central parser already requires a single disk, a terminal classic/ZIP64
+EOCD chain, and a central directory ending at that chain. This stage requires the first
 physical local header at offset zero, each following physical header exactly
 at the preceding payload end, and the final payload exactly at the central-
 directory start. A reordered central directory is valid.
 
 ## ZIP64 and descriptors
 
-Any classic sentinel discovered by the central parser, or either 32-bit local
-size sentinel, returns a distinct `zip64_support_required` result. No ZIP64
-extra or record chain is partially accepted. In a classic record, a nonempty
+An entry sentinel discovered by the central parser returns
+`zip64_entry_resolution_pending`; either 32-bit local-size sentinel returns
+`zip64_support_required`. No ZIP64 entry extra is partially accepted. In a
+classic record, a nonempty
 extra field is an unsupported AURAL feature because Draft 0.2 permits only a
 necessary ZIP64 field.
 
@@ -74,8 +75,8 @@ reported as truncated before any payload I/O.
 
 ## Errors, ownership, and limits
 
-Malformed structure, unsupported AURAL ZIP features, ZIP64-required input,
-resource exhaustion, and native file failures are distinct statuses. Structural
+Malformed structure, unsupported AURAL ZIP features, ZIP64 entry-pending or
+local ZIP64-required input, resource exhaustion, and native file failures are distinct statuses. Structural
 and feature details carry a physical byte offset. Central-parser details remain
 nested when that prerequisite fails. Human diagnostics never contain an
 untrusted filename.
@@ -94,7 +95,7 @@ expansion and gapless layout; those are profile rules, not claims about
 ordinary ZIP validity. For this classic-only milestone, any extra field is
 reported as unsupported rather than malformed unless a sentinel first requires
 ZIP64 support. The next milestone must resolve the contents and equality of
-necessary ZIP64 extras and the ZIP64 EOCD chain before those archives can pass.
+necessary ZIP64 extras and integrate their values into local layout.
 
 APPNOTE does not make central-directory ordering match physical ordering, and
 Draft 0.2 says entry order is insignificant to readers. Therefore central

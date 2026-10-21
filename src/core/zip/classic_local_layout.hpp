@@ -37,6 +37,7 @@ enum class LocalLayoutStatus : std::uint8_t {
     invalid_structure,
     unsupported_archive_feature,
     zip64_support_required,
+    zip64_entry_resolution_pending,
     resource_failure,
     file_failure,
 };

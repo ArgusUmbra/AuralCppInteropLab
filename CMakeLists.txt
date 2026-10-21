@@ -102,6 +102,7 @@ add_library(
     src/core/utf8.cpp
     src/core/zip/classic_central_directory.cpp
     src/core/zip/classic_local_layout.cpp
+    src/core/zip/zip64_end_records.cpp
 )
 add_library(aural::core ALIAS aural_core)
 target_compile_features(aural_core PUBLIC cxx_std_20)
@@ -282,6 +283,17 @@ if(BUILD_TESTING)
         core_zip_local_layout_tests
         tests/core_zip_local_layout_tests.cpp
     )
+
+    add_executable(
+        core_zip64_end_records_tests
+        tests/core_zip64_end_records_tests.cpp
+    )
+    target_link_libraries(
+        core_zip64_end_records_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
+    )
     target_link_libraries(
         core_zip_local_layout_tests
         PRIVATE
@@ -424,5 +436,11 @@ if(BUILD_TESTING)
         core_zip_local_layout
         PROPERTIES
             PASS_REGULAR_EXPRESSION "CORE_ZIP_LOCAL_LAYOUT_TESTS_OK"
+    )
+
+    add_test(NAME core_zip64_end_records COMMAND core_zip64_end_records_tests)
+    set_tests_properties(
+        core_zip64_end_records
+        PROPERTIES PASS_REGULAR_EXPRESSION "CORE_ZIP64_END_RECORDS_TESTS_OK"
     )
 endif()
