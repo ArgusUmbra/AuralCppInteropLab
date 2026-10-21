@@ -70,13 +70,12 @@ details where applicable.
 The full-document CTest target uses independently stated expected bytes for
 primitive, mixed, Unicode, RFC 8785, depth, large-container, limit, invalid
 internal-value, and frozen golden-manifest cases. Comparing canonical output
-to the original manifest byte sequence remains the next milestone; this
-serializer alone does not establish manifest semantics or canonicality of an
-input document.
+to original input bytes is implemented separately by the internal experimental
+canonicality verifier; this serializer alone does not establish manifest
+semantics or canonicality of an input document.
 
 The implementation is validated locally with the complete Windows MSYS2
-UCRT64 GCC Debug and Release suites and the GCC static analyzer. The unchanged
-CMake portability adjustment is exercised by those Windows configurations and
-was exercised on Linux by the successful 8C3A baseline workflow. The current
-uncommitted serializer has not run in GitHub's Linux GCC, Clang, or
-ASan/UBSan jobs and is not claimed as Linux-validated.
+UCRT64 GCC Debug and Release suites and the GCC static analyzer. Baseline
+commit `611fe4c` passed the Linux GCC, Clang, and Clang ASan/UBSan workflow,
+including the GCC analyzer. Later uncommitted work is not claimed as
+Linux-validated.

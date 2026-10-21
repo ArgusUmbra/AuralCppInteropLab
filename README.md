@@ -11,9 +11,9 @@ frozen-input integrity tests, checked byte ranges, a bounded read-only native
 file reader, strict AURAL-profile UTF-8 validation, bounded JSON string
 decoding, allocation-free strict JSON integer/literal parsing, and an internal
 bounded complete JSON parser with arrays, source-ordered objects, and decoded
-duplicate-name rejection, plus internal RFC 8785 decoded-string serialization
-and UTF-16 property-ordering foundations and complete bounded canonical JSON
-document serialization. It does
+duplicate-name rejection, plus internal RFC 8785 decoded-string serialization,
+UTF-16 property-ordering foundations, complete bounded canonical JSON document
+serialization, and internal byte-for-byte canonical JSON verification. It does
 **not** contain an AURAL verifier and does not yet accept, reject, parse, or
 extract AURAL packages.
 
@@ -30,9 +30,9 @@ internal helpers, runners, and fixture generators are excluded. See
 [![Linux C++ CI](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml)
 
 The Linux workflow is configured for GCC 14, Clang 18, and Clang 18 with
-AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `d8eda16`
-passed all three jobs. Uncommitted work in a local tree has not run in GitHub
-Actions and must not be described as CI-tested.
+AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `611fe4c`
+passed all three jobs, including the GCC analyzer. Uncommitted work in a local
+tree has not run in GitHub Actions and must not be described as CI-tested.
 
 ## Build and test
 
@@ -82,7 +82,7 @@ ctest --preset ucrt64-release
 
 The verified platform is Windows with MSYS2 UCRT64 GCC 15.2.0, CMake 4.2.3,
 Ninja 1.13.2, OpenSSL 3.6.1, and zlib 1.3.2. Ubuntu 24.04 with GCC, Clang, and
-the Clang sanitizers passed for baseline commit `21382be`.
+the Clang sanitizers passed for baseline commit `611fe4c`.
 
 ## Reusable library
 
@@ -160,9 +160,10 @@ verification of the input space, or a security guarantee.
 ## Limitations
 
 - The internal JSON layer parses complete bounded documents with arrays and
-  objects and provides complete RFC 8785 serialization for AURAL's
-  integer-only value model. Original-byte canonicality checking and complete
-  AURAL manifest validation are not implemented.
+  objects, provides complete RFC 8785 serialization for AURAL's integer-only
+  value model, and verifies original bytes for canonicality. This does not
+  validate manifest semantics, authenticity, signatures, or a complete AURAL
+  package.
 - No manifest, ZIP, ZIP64, WAV, or adapter implementation exists.
 - No package-verification API exists.
 - File consistency checks reduce, but cannot eliminate, concurrent-mutation
