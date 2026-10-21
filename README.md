@@ -14,8 +14,9 @@ bounded complete JSON parser with arrays, source-ordered objects, and decoded
 duplicate-name rejection, plus internal RFC 8785 decoded-string serialization,
 UTF-16 property-ordering foundations, complete bounded canonical JSON document
 serialization, and internal byte-for-byte canonical JSON verification. It also
-contains manifest-structure validation and a bounded internal classic ZIP
-EOCD/central-directory inspector. It does **not** contain an AURAL package
+contains manifest-structure validation and bounded internal classic ZIP EOCD,
+central-directory, local-header, and physical-layout inspection. It does
+**not** contain an AURAL package
 verifier and does not accept or extract AURAL packages.
 
 ## Clean-room method
@@ -165,9 +166,11 @@ verification of the input space, or a security guarantee.
   value model, and verifies original bytes for canonicality. This does not
   validate authenticity, signatures, or a complete AURAL
   package.
-- Manifest structure and classic ZIP central-directory structure are separate
-  internal foundations. Local-header validation, ZIP64 parsing, complete ZIP
-  profile validation, WAV validation, and the adapter do not exist.
+- Manifest structure and classic ZIP structure are separate internal
+  foundations. Classic local headers, central/local agreement, and physical
+  layout are validated, but ZIP64 parsing, complete package inventory and
+  metadata policy, CRC/hash verification, WAV validation, and the adapter do
+  not exist.
 - No package-verification API exists.
 - File consistency checks reduce, but cannot eliminate, concurrent-mutation
   races or detect every same-size content change on every filesystem.

@@ -101,6 +101,7 @@ add_library(
     src/core/range.cpp
     src/core/utf8.cpp
     src/core/zip/classic_central_directory.cpp
+    src/core/zip/classic_local_layout.cpp
 )
 add_library(aural::core ALIAS aural_core)
 target_compile_features(aural_core PUBLIC cxx_std_20)
@@ -277,6 +278,17 @@ if(BUILD_TESTING)
             aural_project_warnings
     )
 
+    add_executable(
+        core_zip_local_layout_tests
+        tests/core_zip_local_layout_tests.cpp
+    )
+    target_link_libraries(
+        core_zip_local_layout_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
+    )
+
     add_test(NAME executable_startup COMMAND aural_lab)
     set_tests_properties(
         executable_startup
@@ -400,5 +412,17 @@ if(BUILD_TESTING)
         core_zip_central_directory
         PROPERTIES
             PASS_REGULAR_EXPRESSION "CORE_ZIP_CENTRAL_DIRECTORY_TESTS_OK"
+    )
+
+    add_test(
+        NAME core_zip_local_layout
+        COMMAND
+            core_zip_local_layout_tests
+            "${CMAKE_CURRENT_SOURCE_DIR}/frozen-input/source/tests/fixtures/conformance"
+    )
+    set_tests_properties(
+        core_zip_local_layout
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CORE_ZIP_LOCAL_LAYOUT_TESTS_OK"
     )
 endif()

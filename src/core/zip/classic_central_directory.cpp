@@ -1,4 +1,5 @@
 #include "classic_central_directory.hpp"
+#include "classic_central_directory_internal.hpp"
 
 #include <aural/core/range.hpp>
 
@@ -238,8 +239,9 @@ std::optional<CentralDirectoryInspection> check_entry_sentinels(
     return std::nullopt;
 }
 
-CentralDirectoryInspection inspect_open_file(FileReader reader,
-                                             const ClassicZipLimits& limits)
+CentralDirectoryInspection inspect_open_file(const FileReader& reader,
+                                             const ClassicZipLimits& limits,
+                                             const bool defer_local_overlap_checks)
 {
     const std::uint64_t file_size = reader.size();
     if (file_size > limits.maximum_archive_size) {
@@ -333,19 +335,23 @@ CentralDirectoryInspection inspect_open_file(FileReader reader,
                 CentralDirectoryErrorCode::local_header_offset_out_of_bounds,
                 absolute + 42U);
         }
-        if (local_offset >= directory_offset || *local_fixed_end > directory_offset) {
+        if (!defer_local_overlap_checks
+            && (local_offset >= directory_offset
+                || *local_fixed_end > directory_offset)) {
             return invalid(
                 CentralDirectoryErrorCode::local_header_range_overlaps_directory,
                 absolute + 42U);
         }
-        for (const auto& previous : entries) {
-            const std::uint64_t previous_end =
-                previous.local_header_offset + local_header_fixed_size;
-            if (local_offset < previous_end
-                && previous.local_header_offset < *local_fixed_end) {
-                return invalid(
-                    CentralDirectoryErrorCode::local_header_ranges_overlap,
-                    absolute + 42U);
+        if (!defer_local_overlap_checks) {
+            for (const auto& previous : entries) {
+                const std::uint64_t previous_end =
+                    previous.local_header_offset + local_header_fixed_size;
+                if (local_offset < previous_end
+                    && previous.local_header_offset < *local_fixed_end) {
+                    return invalid(
+                        CentralDirectoryErrorCode::local_header_ranges_overlap,
+                        absolute + 42U);
+                }
             }
         }
 
@@ -396,6 +402,19 @@ CentralDirectoryInspection inspect_open_file(FileReader reader,
 
 } // namespace
 
+CentralDirectoryInspection inspect_classic_central_directory_open(
+    const FileReader& reader,
+    const ClassicZipLimits limits,
+    const bool defer_local_header_overlap_checks)
+{
+    try {
+        return inspect_open_file(reader, limits,
+                                 defer_local_header_overlap_checks);
+    } catch (const std::bad_alloc&) {
+        return allocation_failure();
+    }
+}
+
 CentralDirectoryInspection inspect_classic_central_directory(
     const std::filesystem::path& path,
     const ClassicZipLimits limits)
@@ -403,7 +422,7 @@ CentralDirectoryInspection inspect_classic_central_directory(
     try {
         auto opened = FileReader::open(path);
         if (!opened) return file_failure(opened.error());
-        return inspect_open_file(std::move(opened).value(), limits);
+        return inspect_classic_central_directory_open(opened.value(), limits);
     } catch (const std::bad_alloc&) {
         return allocation_failure();
     }
