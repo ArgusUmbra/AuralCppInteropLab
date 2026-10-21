@@ -78,7 +78,9 @@ component rejected a token. `json_value_error_message` supplies a stable,
 non-empty developer description, but callers should branch on the typed code.
 
 Floating-point numbers are intentionally rejected by the AURAL integer-only
-profile. RFC 8785 canonical serialization, canonical byte verification,
-manifest root-object requirements, required properties, and all other manifest
-semantics are unsupported. This internal API has no stable ABI promise and
-must not be used as evidence that an AURAL manifest is valid or canonical.
+profile. Separate internal foundations now serialize decoded strings and order
+object names for RFC 8785, but complete canonical document serialization,
+canonical byte verification, manifest root-object requirements, required
+properties, and all other manifest semantics remain unsupported. This internal
+API has no stable ABI promise and must not be used as evidence that an AURAL
+manifest is valid or canonical.

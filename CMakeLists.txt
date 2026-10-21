@@ -12,6 +12,41 @@ option(AURAL_ENABLE_GCC_ANALYZER "Enable GCC's interprocedural static analyzer" 
 find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
 find_package(ZLIB REQUIRED)
 
+# MSYS2 package configs publish the UCRT prefix include directory explicitly,
+# even though GCC already treats it as an implicit system directory. Re-adding
+# that same directory before libstdc++ breaks the latter's #include_next use
+# (notably <cstdlib> -> <stdlib.h>) on fresh builds. Remove only that exact
+# compiler-prefix directory; custom dependency include directories are kept.
+if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    get_filename_component(_aural_compiler_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    get_filename_component(_aural_compiler_prefix "${_aural_compiler_bin}" DIRECTORY)
+    set(_aural_implicit_prefix_include "${_aural_compiler_prefix}/include")
+    foreach(_aural_dependency_target OpenSSL::Crypto ZLIB::ZLIB)
+        get_target_property(
+            _aural_dependency_includes
+            ${_aural_dependency_target}
+            INTERFACE_INCLUDE_DIRECTORIES
+        )
+        if(_aural_dependency_includes)
+            list(
+                REMOVE_ITEM
+                _aural_dependency_includes
+                "${_aural_implicit_prefix_include}"
+            )
+            set_property(
+                TARGET ${_aural_dependency_target}
+                PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+                    "${_aural_dependency_includes}"
+            )
+        endif()
+    endforeach()
+    unset(_aural_dependency_includes)
+    unset(_aural_dependency_target)
+    unset(_aural_implicit_prefix_include)
+    unset(_aural_compiler_prefix)
+    unset(_aural_compiler_bin)
+endif()
+
 add_library(aural_project_warnings INTERFACE)
 if(MSVC)
     target_compile_options(aural_project_warnings INTERFACE /W4 /WX /permissive-)
@@ -55,7 +90,9 @@ endif()
 add_library(
     aural_core
     src/core/file_reader.cpp
+    src/core/json/canonical_json_string.cpp
     src/core/json/json_primitive_parser.cpp
+    src/core/json/json_property_order.cpp
     src/core/json/json_string_decoder.cpp
     src/core/json/json_value_parser.cpp
     src/core/range.cpp
@@ -181,6 +218,17 @@ if(BUILD_TESTING)
             aural_project_warnings
     )
 
+    add_executable(
+        core_json_canonicalization_tests
+        tests/core_json_canonicalization_tests.cpp
+    )
+    target_link_libraries(
+        core_json_canonicalization_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
+    )
+
     add_test(NAME executable_startup COMMAND aural_lab)
     set_tests_properties(
         executable_startup
@@ -246,5 +294,15 @@ if(BUILD_TESTING)
         core_json_objects_and_documents
         PROPERTIES
             PASS_REGULAR_EXPRESSION "CORE_JSON_OBJECT_DOCUMENT_TESTS_OK"
+    )
+
+    add_test(
+        NAME core_json_canonicalization_foundations
+        COMMAND core_json_canonicalization_tests
+    )
+    set_tests_properties(
+        core_json_canonicalization_foundations
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CORE_JSON_CANONICALIZATION_TESTS_OK"
     )
 endif()
