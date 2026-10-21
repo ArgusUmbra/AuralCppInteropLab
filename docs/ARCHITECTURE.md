@@ -33,6 +33,12 @@ The repository currently builds only:
 - `core_manifest_structure`, adversarial coverage for the closed core shape,
   field constraints, extension policy, safe paths, determinism, immutability,
   combined-pipeline ordering, and the frozen golden manifest.
+- `aural_core` contains an internal bounded classic ZIP EOCD and central-
+  directory inspector with raw filename ownership, typed offset diagnostics,
+  AURAL resource ceilings, multidisk rejection, and a distinct ZIP64-required
+  outcome; and
+- `core_zip_central_directory`, independently assembled byte-record tests and
+  selected frozen-fixture structural coverage.
 
 There is no package verifier component yet.
 
@@ -46,7 +52,7 @@ There is no package verifier component yet.
 | RFC 8785 JCS | Canonical decoded-string serialization, non-mutating UTF-16 property ordering, complete iterative document serialization, and original-byte validation are implemented | Validate/measure before exact output allocation, depth/value/string/output bounds, no partial success, first mismatch offset, and separate sorted index views |
 | Manifest structure | Required/optional Draft 0.2 members, closed core objects, local field constraints, timestamps, and extensions | Implemented over a const owned JSON tree; success is structural only and cannot imply package validity |
 | Manifest semantic model | Immutable package-correlated Draft 0.2 values | Planned; construct only after archive agreement, hash, and cross-field validation |
-| ZIP/ZIP64 records | Raw little-endian record parsing and cross-record consistency | Validate complete layout, sentinels, extras, offsets, sizes, names, flags, and metadata |
+| ZIP/ZIP64 records | Classic EOCD discovery and bounded central-directory parsing are implemented; local records and ZIP64 chains are planned | Current stage validates classic record bounds, counts, raw names, offsets, single-disk form, and sentinels without claiming package validity |
 | CRC32/SHA-256 streams | zlib CRC32 and OpenSSL EVP SHA-256 over bounded byte ranges | Stream fixed-size buffers; never buffer an entire hostile asset |
 | Package verifier | Ordered orchestration of container, manifest, WAV identity, and integrity checks | No extraction; explicit typed result and controlled rejection |
 | Adapter Protocol 1 | Strict bounded stdin/stdout protocol around package verification | Separate protocol errors from controlled package rejection |
