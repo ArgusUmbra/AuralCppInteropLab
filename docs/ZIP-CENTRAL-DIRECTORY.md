@@ -76,9 +76,7 @@ attributes, and the exact two-entry inventory.
 ## Error and ownership model
 
 Expected outcomes are separated into structurally valid, invalid structure,
-resource failure, and file failure. The legacy ZIP64-pending status remains in
-the internal result type for downstream compatibility but successful central
-resolution no longer uses it. Structural details carry the physical offset of
+resource failure, and file failure. Structural details carry the physical offset of
 the responsible record, field, missing-value boundary, or surplus byte.
 Native file details remain nested `FileError` values. Allocation failure is
 reported without a partial directory.
@@ -89,7 +87,7 @@ views into temporary I/O buffers.
 
 ## Explicitly unsupported
 
-This milestone does not resolve local-header ZIP64 extras or validate complete
-ZIP64 physical layout. It also does not validate entry data, CRC32, hashes,
+Local-header ZIP64 extras and complete ZIP64 physical layout are validated by
+the downstream local-layout stage. This component does not validate entry data, CRC32, hashes,
 manifest agreement, WAVE identity, decompression, extraction, or complete
 AURAL package validity. These remain separate verification stages.

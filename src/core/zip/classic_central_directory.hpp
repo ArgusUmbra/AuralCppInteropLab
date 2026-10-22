@@ -16,12 +16,16 @@ inline constexpr std::uint64_t maximum_aural_archive_size = UINT64_C(8606711808)
 inline constexpr std::uint64_t maximum_aural_central_directory_size =
     UINT64_C(4194304);
 inline constexpr std::uint64_t maximum_aural_entry_count = UINT64_C(2);
+inline constexpr std::uint64_t maximum_aural_entry_uncompressed_size =
+    UINT64_C(8589934592);
 
 struct ClassicZipLimits final {
     std::uint64_t maximum_archive_size = maximum_aural_archive_size;
     std::uint64_t maximum_central_directory_size =
         maximum_aural_central_directory_size;
     std::uint64_t maximum_entry_count = maximum_aural_entry_count;
+    std::uint64_t maximum_entry_uncompressed_size =
+        maximum_aural_entry_uncompressed_size;
 };
 
 struct CentralDirectoryEntry final {
@@ -65,7 +69,6 @@ struct ClassicCentralDirectory final {
 enum class CentralDirectoryStatus : std::uint8_t {
     structurally_valid,
     invalid_structure,
-    zip64_entry_resolution_pending,
     resource_failure,
     file_failure,
 };
@@ -114,19 +117,6 @@ enum class CentralDirectoryErrorCode : std::uint8_t {
     local_header_ranges_overlap,
 };
 
-enum class Zip64RequiredField : std::uint8_t {
-    eocd_disk_number,
-    eocd_central_directory_disk,
-    eocd_entries_on_disk,
-    eocd_total_entries,
-    eocd_central_directory_size,
-    eocd_central_directory_offset,
-    entry_disk_number,
-    entry_compressed_size,
-    entry_uncompressed_size,
-    entry_local_header_offset,
-};
-
 enum class CentralDirectoryResource : std::uint8_t {
     allocation_failure,
 };
@@ -136,16 +126,10 @@ struct CentralDirectoryError final {
     std::uint64_t offset;
 };
 
-struct Zip64Required final {
-    Zip64RequiredField field;
-    std::uint64_t offset;
-};
-
 struct CentralDirectoryInspection final {
     CentralDirectoryStatus status;
     std::optional<ClassicCentralDirectory> directory;
     std::optional<CentralDirectoryError> error;
-    std::optional<Zip64Required> zip64;
     std::optional<CentralDirectoryResource> resource;
     std::optional<FileError> file_error;
 

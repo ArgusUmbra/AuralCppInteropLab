@@ -36,8 +36,6 @@ enum class LocalLayoutStatus : std::uint8_t {
     profile_valid,
     invalid_structure,
     unsupported_archive_feature,
-    zip64_support_required,
-    zip64_entry_resolution_pending,
     resource_failure,
     file_failure,
 };
@@ -49,6 +47,15 @@ enum class LocalLayoutErrorCode : std::uint8_t {
     invalid_local_header_signature,
     local_record_length_overflow,
     local_variable_fields_out_of_bounds,
+    local_extra_field_header_truncated,
+    local_extra_field_data_out_of_bounds,
+    prohibited_local_extra_field,
+    duplicate_local_zip64_extra_field,
+    missing_local_zip64_extra_field,
+    unnecessary_local_zip64_extra_field,
+    local_zip64_size_sentinels_incomplete,
+    local_zip64_extra_required_value_truncated,
+    local_zip64_extra_trailing_data,
     version_needed_mismatch,
     flags_mismatch,
     compression_method_mismatch,
@@ -59,6 +66,7 @@ enum class LocalLayoutErrorCode : std::uint8_t {
     uncompressed_size_mismatch,
     filename_mismatch,
     stored_size_mismatch,
+    entry_size_limit_exceeded,
     duplicate_local_header_reference,
     local_structures_overlap,
     header_payload_overlap,
@@ -74,17 +82,9 @@ enum class UnsupportedArchiveFeature : std::uint8_t {
     data_descriptor,
     general_purpose_flag,
     compression_method,
-    local_extra_field,
-    central_extra_field,
     entry_comment,
     archive_comment,
     version_needed,
-};
-
-enum class LocalZip64RequiredField : std::uint8_t {
-    central_directory,
-    local_compressed_size,
-    local_uncompressed_size,
 };
 
 enum class LocalLayoutResource : std::uint8_t {
@@ -101,17 +101,11 @@ struct UnsupportedFeatureError final {
     std::uint64_t offset;
 };
 
-struct LocalZip64Required final {
-    LocalZip64RequiredField field;
-    std::uint64_t offset;
-};
-
 struct LocalLayoutInspection final {
     LocalLayoutStatus status;
     std::optional<ClassicArchivePhysicalLayout> layout;
     std::optional<LocalLayoutError> error;
     std::optional<UnsupportedFeatureError> unsupported;
-    std::optional<LocalZip64Required> zip64;
     std::optional<CentralDirectoryError> central_error;
     std::optional<CentralDirectoryResource> central_resource;
     std::optional<LocalLayoutResource> resource;
@@ -123,7 +117,7 @@ struct LocalLayoutInspection final {
     }
 };
 
-// Validates the classic local records and the Draft 0.2 physical ZIP profile.
+// Validates classic or ZIP64 local records and the Draft 0.2 physical profile.
 // Success is not full AURAL verification: payload CRC/SHA-256, manifest,
 // inventory/name policy, WAVE identity, and file-type metadata remain separate.
 [[nodiscard]] LocalLayoutInspection inspect_classic_local_layout(

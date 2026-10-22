@@ -280,8 +280,8 @@ void test_successful_resolution(const TemporaryDirectory& temporary)
     const auto pending_path = temporary.path() / "local-pending.zip";
     write_bytes(pending_path, make_archive(multiple));
     require(inspect_classic_local_layout(pending_path).status
-                == LocalLayoutStatus::zip64_entry_resolution_pending,
-            "complete local layout remains explicitly pending");
+                == LocalLayoutStatus::invalid_structure,
+            "resolved central ZIP64 metadata proceeds into local validation");
 }
 
 void test_necessity_and_format_errors(const TemporaryDirectory& temporary)

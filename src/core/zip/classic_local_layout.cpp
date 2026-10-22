@@ -46,6 +46,13 @@ std::uint32_t read_u32(const std::span<const std::byte> bytes,
            << 24U));
 }
 
+std::uint64_t read_u64(const std::span<const std::byte> bytes,
+                       const std::size_t offset) noexcept
+{
+    return static_cast<std::uint64_t>(read_u32(bytes, offset))
+        | (static_cast<std::uint64_t>(read_u32(bytes, offset + 4U)) << 32U);
+}
+
 LocalLayoutInspection invalid(const LocalLayoutErrorCode code,
                               const std::uint64_t offset,
                               const std::optional<CentralDirectoryError> central =
@@ -54,7 +61,6 @@ LocalLayoutInspection invalid(const LocalLayoutErrorCode code,
     return {LocalLayoutStatus::invalid_structure,
             std::nullopt,
             LocalLayoutError{code, offset},
-            std::nullopt,
             std::nullopt,
             central,
             std::nullopt,
@@ -72,30 +78,7 @@ LocalLayoutInspection unsupported(const UnsupportedArchiveFeature feature,
             std::nullopt,
             std::nullopt,
             std::nullopt,
-            std::nullopt,
             std::nullopt};
-}
-
-LocalLayoutInspection needs_zip64(const LocalZip64RequiredField field,
-                                  const std::uint64_t offset)
-{
-    return {LocalLayoutStatus::zip64_support_required,
-            std::nullopt,
-            std::nullopt,
-            std::nullopt,
-            LocalZip64Required{field, offset},
-            std::nullopt,
-            std::nullopt,
-            std::nullopt,
-            std::nullopt};
-}
-
-LocalLayoutInspection entry_resolution_pending(const std::uint64_t offset)
-{
-    auto result = needs_zip64(LocalZip64RequiredField::central_directory,
-                              offset);
-    result.status = LocalLayoutStatus::zip64_entry_resolution_pending;
-    return result;
 }
 
 LocalLayoutInspection file_failure(const FileError error)
@@ -131,8 +114,6 @@ std::optional<LocalLayoutInspection> map_central_failure(
     case CentralDirectoryStatus::invalid_structure:
         return invalid(LocalLayoutErrorCode::central_directory_invalid,
                        central.error->offset, central.error);
-    case CentralDirectoryStatus::zip64_entry_resolution_pending:
-        return entry_resolution_pending(central.zip64->offset);
     case CentralDirectoryStatus::resource_failure: {
         auto result = allocation_failure();
         result.central_resource = central.resource;
@@ -144,8 +125,95 @@ std::optional<LocalLayoutInspection> map_central_failure(
     return invalid(LocalLayoutErrorCode::central_directory_invalid, 0U);
 }
 
+struct ResolvedLocalSizes final {
+    std::uint64_t compressed;
+    std::uint64_t uncompressed;
+    bool uses_zip64;
+};
+
+std::optional<LocalLayoutInspection> resolve_local_sizes(
+    const std::span<const std::byte> fixed,
+    const std::span<const std::byte> extra,
+    const std::uint64_t local_offset,
+    ResolvedLocalSizes& resolved)
+{
+    const std::uint32_t declared_compressed = read_u32(fixed, 18U);
+    const std::uint32_t declared_uncompressed = read_u32(fixed, 22U);
+    const bool compressed_required = declared_compressed == UINT32_MAX;
+    const bool uncompressed_required = declared_uncompressed == UINT32_MAX;
+    const bool zip64_required = compressed_required || uncompressed_required;
+    resolved = {declared_compressed, declared_uncompressed, false};
+
+    // APPNOTE 6.3.10 section 4.5.3 requires both sizes in a local ZIP64
+    // block. AURAL prohibits values without their corresponding sentinel,
+    // so valid local ZIP64 size declarations use both classic sentinels.
+    if (compressed_required != uncompressed_required) {
+        return invalid(
+            LocalLayoutErrorCode::local_zip64_size_sentinels_incomplete,
+            local_offset + (compressed_required ? 22U : 18U));
+    }
+
+    std::size_t cursor = 0U;
+    bool found_zip64 = false;
+    while (cursor < extra.size()) {
+        const std::uint64_t absolute = local_offset + local_header_fixed_size
+            + read_u16(fixed, 26U) + static_cast<std::uint64_t>(cursor);
+        if (extra.size() - cursor < 4U) {
+            return invalid(
+                LocalLayoutErrorCode::local_extra_field_header_truncated,
+                absolute);
+        }
+        const std::uint16_t header_id = read_u16(extra, cursor);
+        const std::uint16_t data_size = read_u16(extra, cursor + 2U);
+        const std::size_t data_begin = cursor + 4U;
+        if (static_cast<std::size_t>(data_size)
+            > extra.size() - data_begin) {
+            return invalid(
+                LocalLayoutErrorCode::local_extra_field_data_out_of_bounds,
+                absolute + 2U);
+        }
+        if (header_id != UINT16_C(0x0001)) {
+            return invalid(LocalLayoutErrorCode::prohibited_local_extra_field,
+                           absolute);
+        }
+        if (found_zip64) {
+            return invalid(
+                LocalLayoutErrorCode::duplicate_local_zip64_extra_field,
+                absolute);
+        }
+        if (!zip64_required) {
+            return invalid(
+                LocalLayoutErrorCode::unnecessary_local_zip64_extra_field,
+                absolute);
+        }
+        found_zip64 = true;
+        constexpr std::uint16_t required_size = 16U;
+        if (data_size < required_size) {
+            return invalid(
+                LocalLayoutErrorCode::local_zip64_extra_required_value_truncated,
+                absolute + 4U + data_size);
+        }
+        if (data_size > required_size) {
+            return invalid(
+                LocalLayoutErrorCode::local_zip64_extra_trailing_data,
+                absolute + 4U + required_size);
+        }
+        resolved.uncompressed = read_u64(extra, data_begin);
+        resolved.compressed = read_u64(extra, data_begin + 8U);
+        resolved.uses_zip64 = true;
+        cursor = data_begin + data_size;
+    }
+
+    if (zip64_required && !found_zip64) {
+        return invalid(LocalLayoutErrorCode::missing_local_zip64_extra_field,
+                       local_offset + 18U);
+    }
+    return std::nullopt;
+}
+
 std::optional<LocalLayoutInspection> compare_local_and_central(
     const std::span<const std::byte> fixed,
+    const ResolvedLocalSizes& local,
     const CentralDirectoryEntry& central,
     const std::uint64_t offset)
 {
@@ -170,11 +238,11 @@ std::optional<LocalLayoutInspection> compare_local_and_central(
     if (read_u32(fixed, 14U) != central.declared_crc32) {
         return invalid(LocalLayoutErrorCode::crc32_mismatch, offset + 14U);
     }
-    if (read_u32(fixed, 18U) != central.declared_compressed_size) {
+    if (local.compressed != central.compressed_size) {
         return invalid(LocalLayoutErrorCode::compressed_size_mismatch,
                        offset + 18U);
     }
-    if (read_u32(fixed, 22U) != central.declared_uncompressed_size) {
+    if (local.uncompressed != central.uncompressed_size) {
         return invalid(LocalLayoutErrorCode::uncompressed_size_mismatch,
                        offset + 22U);
     }
@@ -183,8 +251,9 @@ std::optional<LocalLayoutInspection> compare_local_and_central(
 
 std::optional<LocalLayoutInspection> validate_profile_fields(
     const CentralDirectoryEntry& central,
+    const ResolvedLocalSizes& local,
     const std::uint64_t local_offset,
-    const std::uint16_t local_extra_length)
+    const ClassicZipLimits& limits)
 {
     if ((central.flags & data_descriptor_flag) != 0U) {
         return unsupported(UnsupportedArchiveFeature::data_descriptor,
@@ -203,17 +272,18 @@ std::optional<LocalLayoutInspection> validate_profile_fields(
         return unsupported(UnsupportedArchiveFeature::version_needed,
                            local_offset + 4U);
     }
+    if ((central.uses_zip64 || local.uses_zip64)
+        && central.version_needed != 45U) {
+        return unsupported(UnsupportedArchiveFeature::version_needed,
+                           local_offset + 4U);
+    }
     if (central.compressed_size != central.uncompressed_size) {
         return invalid(LocalLayoutErrorCode::stored_size_mismatch,
                        central.header_offset + 20U);
     }
-    if (local_extra_length != 0U) {
-        return unsupported(UnsupportedArchiveFeature::local_extra_field,
-                           local_offset + 28U);
-    }
-    if (central.extra_field_length != 0U) {
-        return unsupported(UnsupportedArchiveFeature::central_extra_field,
-                           central.header_offset + 30U);
+    if (central.uncompressed_size > limits.maximum_entry_uncompressed_size) {
+        return invalid(LocalLayoutErrorCode::entry_size_limit_exceeded,
+                       central.header_offset + 24U);
     }
     if (central.comment_length != 0U) {
         return unsupported(UnsupportedArchiveFeature::entry_comment,
@@ -232,23 +302,6 @@ LocalLayoutInspection inspect_open_file(const FileReader& reader,
     if (directory.archive_comment_length != 0U) {
         return unsupported(UnsupportedArchiveFeature::archive_comment,
                            directory.eocd_offset + 20U);
-    }
-
-    // Central ZIP64 values are resolved, but local ZIP64 extra fields are a
-    // later milestone. Do not compare classic local fields against expanded
-    // central values or claim a complete physical layout yet.
-    for (const auto& entry : directory.entries) {
-        if (entry.uses_zip64) {
-            std::uint64_t offset = entry.header_offset + 24U;
-            if (entry.declared_uncompressed_size != UINT32_MAX) {
-                offset = entry.declared_compressed_size == UINT32_MAX
-                    ? entry.header_offset + 20U
-                    : entry.declared_local_header_offset == UINT32_MAX
-                        ? entry.header_offset + 42U
-                        : entry.header_offset + 34U;
-            }
-            return entry_resolution_pending(offset);
-        }
     }
 
     std::vector<ClassicEntryPhysicalLayout> entries;
@@ -297,19 +350,6 @@ LocalLayoutInspection inspect_open_file(const FileReader& reader,
             return invalid(LocalLayoutErrorCode::invalid_local_header_signature,
                            offset);
         }
-        if (read_u32(fixed, 18U) == UINT32_MAX) {
-            return needs_zip64(LocalZip64RequiredField::local_compressed_size,
-                               offset + 18U);
-        }
-        if (read_u32(fixed, 22U) == UINT32_MAX) {
-            return needs_zip64(LocalZip64RequiredField::local_uncompressed_size,
-                               offset + 22U);
-        }
-
-        if (auto failure = compare_local_and_central(fixed, entry, offset)) {
-            return std::move(*failure);
-        }
-
         const std::uint16_t name_length = read_u16(fixed, 26U);
         const std::uint16_t extra_length = read_u16(fixed, 28U);
         const auto variable_length = checked_add(name_length, extra_length);
@@ -346,11 +386,25 @@ LocalLayoutInspection inspect_open_file(const FileReader& reader,
                            offset + local_header_fixed_size);
         }
 
-        if (auto failure = validate_profile_fields(entry, offset, extra_length)) {
+        const auto extra_begin = std::span<const std::byte>{variable}.subspan(
+            static_cast<std::size_t>(name_length));
+        ResolvedLocalSizes local_sizes{};
+        if (auto failure = resolve_local_sizes(fixed, extra_begin, offset,
+                                               local_sizes)) {
             return std::move(*failure);
         }
 
-        const auto payload_end = checked_add(*header_end, entry.compressed_size);
+        if (auto failure = compare_local_and_central(
+                fixed, local_sizes, entry, offset)) {
+            return std::move(*failure);
+        }
+
+        if (auto failure = validate_profile_fields(entry, local_sizes, offset,
+                                                   limits)) {
+            return std::move(*failure);
+        }
+
+        const auto payload_end = checked_add(*header_end, local_sizes.compressed);
         if (!payload_end) {
             return invalid(LocalLayoutErrorCode::payload_truncated, *header_end);
         }
@@ -459,7 +513,6 @@ LocalLayoutInspection inspect_open_file(const FileReader& reader,
             std::nullopt,
             std::nullopt,
             std::nullopt,
-            std::nullopt,
             std::nullopt};
 }
 
@@ -494,6 +547,24 @@ std::string_view local_layout_error_message(
         return "local variable-field lengths overflow";
     case LocalLayoutErrorCode::local_variable_fields_out_of_bounds:
         return "local filename or extra field is truncated";
+    case LocalLayoutErrorCode::local_extra_field_header_truncated:
+        return "local extra-field header is truncated";
+    case LocalLayoutErrorCode::local_extra_field_data_out_of_bounds:
+        return "local extra-field data exceeds the declared extra region";
+    case LocalLayoutErrorCode::prohibited_local_extra_field:
+        return "local extra-field ID is prohibited by AURAL";
+    case LocalLayoutErrorCode::duplicate_local_zip64_extra_field:
+        return "local header contains duplicate ZIP64 extra fields";
+    case LocalLayoutErrorCode::missing_local_zip64_extra_field:
+        return "local size sentinels require a ZIP64 extra field";
+    case LocalLayoutErrorCode::unnecessary_local_zip64_extra_field:
+        return "local ZIP64 extra field has no corresponding sentinel";
+    case LocalLayoutErrorCode::local_zip64_size_sentinels_incomplete:
+        return "local ZIP64 requires both classic size sentinels";
+    case LocalLayoutErrorCode::local_zip64_extra_required_value_truncated:
+        return "local ZIP64 extra field omits a required size";
+    case LocalLayoutErrorCode::local_zip64_extra_trailing_data:
+        return "local ZIP64 extra field contains prohibited trailing data";
     case LocalLayoutErrorCode::version_needed_mismatch:
         return "local and central version-needed fields differ";
     case LocalLayoutErrorCode::flags_mismatch:
@@ -514,6 +585,8 @@ std::string_view local_layout_error_message(
         return "local and central filename bytes differ";
     case LocalLayoutErrorCode::stored_size_mismatch:
         return "stored compressed and uncompressed sizes differ";
+    case LocalLayoutErrorCode::entry_size_limit_exceeded:
+        return "entry uncompressed size exceeds the configured limit";
     case LocalLayoutErrorCode::duplicate_local_header_reference:
         return "multiple central entries reference one local header";
     case LocalLayoutErrorCode::local_structures_overlap:

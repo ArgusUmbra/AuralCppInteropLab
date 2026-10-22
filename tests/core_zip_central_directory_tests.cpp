@@ -204,13 +204,6 @@ CentralDirectoryInspection inspect_bytes(
                     && result.error->offset == repeated.error->offset,
                 "repeated inspection must have deterministic error detail");
     }
-    require(result.zip64.has_value() == repeated.zip64.has_value(),
-            "repeated inspection must have deterministic ZIP64 shape");
-    if (result.zip64) {
-        require(result.zip64->field == repeated.zip64->field
-                    && result.zip64->offset == repeated.zip64->offset,
-                "repeated inspection must have deterministic ZIP64 detail");
-    }
     return result;
 }
 

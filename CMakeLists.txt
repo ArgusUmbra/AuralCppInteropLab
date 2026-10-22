@@ -292,6 +292,16 @@ if(BUILD_TESTING)
         core_zip64_central_entry_tests
         tests/core_zip64_central_entry_tests.cpp
     )
+    add_executable(
+        core_zip64_local_layout_tests
+        tests/core_zip64_local_layout_tests.cpp
+    )
+    target_link_libraries(
+        core_zip64_local_layout_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
+    )
     target_link_libraries(
         core_zip64_central_entry_tests
         PRIVATE
@@ -461,5 +471,16 @@ if(BUILD_TESTING)
         core_zip64_central_entries
         PROPERTIES
             PASS_REGULAR_EXPRESSION "CORE_ZIP64_CENTRAL_ENTRY_TESTS_OK"
+    )
+    add_test(
+        NAME core_zip64_local_layout
+        COMMAND
+            core_zip64_local_layout_tests
+            "${CMAKE_CURRENT_SOURCE_DIR}/frozen-input/source/tests/fixtures/conformance"
+    )
+    set_tests_properties(
+        core_zip64_local_layout
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CORE_ZIP64_LOCAL_LAYOUT_TESTS_OK"
     )
 endif()

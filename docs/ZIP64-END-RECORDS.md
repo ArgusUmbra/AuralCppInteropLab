@@ -77,13 +77,10 @@ The existing archive-level inspector is consistent with this clarification.
 It requires the chain whenever a classic EOCD sentinel is present, while a
 redundant chain leaves undeclared bytes between the central directory and
 classic EOCD and is rejected by the exact-end boundary check. No parser change
-is needed for the archive-level rule. Central per-entry ZIP64 resolution is
-implemented separately; local-header ZIP64 resolution remains deferred.
+is needed for the archive-level rule. Central per-entry and local-header
+ZIP64 resolution are implemented by the directory and layout stages.
 
 ## Remaining ZIP64 work
 
-Local ZIP64 per-entry extra-field resolution, local/central comparison after
-expansion, and complete ZIP64 physical-layout validation remain for the next
-milestone.
 CRC32, SHA-256, inventory, manifest correlation, WAVE/RF64 identification,
 extraction, and package verification also remain outside this component.

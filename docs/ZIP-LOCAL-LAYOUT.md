@@ -1,106 +1,80 @@
-# Classic ZIP local headers and physical layout
+# ZIP and ZIP64 local headers and physical layout
 
 ## Authority and boundary
 
 The internal `classic_local_layout` component applies AURAL Draft 0.2
-sections 6.1-6.6 and verification step 4 on top of the classic central-
-directory inspector. Its ZIP record interpretation follows PKWARE APPNOTE
-6.3.10 sections 4.3.2-4.3.9, 4.3.12, 4.4.1, 4.4.3-4.4.12, 4.4.16-4.4.18,
-and 4.5.3.
+sections 6.1-6.6 and verification step 4 on top of the resolved central-
+directory inspector. Record interpretation follows PKWARE APPNOTE 6.3.10
+sections 4.3.2-4.3.9, 4.3.12, 4.4.1, 4.4.3-4.4.12, 4.4.16-4.4.18, and 4.5.3.
 
-Success means that the classic local records agree with their central records
-and satisfy the applicable Draft 0.2 physical ZIP profile. It is not complete
-AURAL package acceptance. Exact two-name inventory, regular-file attributes,
-manifest parsing/correlation, CRC32 computation, SHA-256, WAVE/RF64 identity,
-and local ZIP64 entry-extra resolution remain later stages.
+Success establishes a complete structural layout for classic or ZIP64 stored
+entries. It is not complete AURAL package acceptance. Exact two-name inventory,
+regular-file attribute policy, manifest correlation, CRC32 computation,
+SHA-256, and WAVE/RF64 validation remain separate stages.
 
-## Validated records and consistency
+## Local ZIP64 resolution and consistency
 
-For every central entry, the component uses the declared physical local-header
-offset, reads the 30-byte fixed header, decodes unsigned little-endian fields,
-and bounds the declared filename and extra-field regions before allocating or
-reading them. It requires exact equality of version-needed, flags, method,
-MS-DOS time/date, CRC32 declaration, compressed and uncompressed sizes, and
-filename octets. Filename bytes are compared and retained without decoding or
-including them in diagnostics.
+For every resolved central entry, the component uses the effective unsigned
+64-bit local-header offset and reads the 30-byte fixed local header. Filename
+and extra-field regions are bounded before allocation and read from the same
+open `FileReader`. Exact raw filename bytes are retained and compared without
+decoding or including untrusted bytes in diagnostics.
 
-The derived payload is the checked half-open range beginning after the fixed
-header, filename, and extra field and having the central compressed size. No
-payload byte is read. Returned metadata owns its bounded filename and local
-extra-field bytes and is sorted by physical local-header offset, independently
-of central-directory order.
+Local and central declarations are independent. A local header with neither
+size sentinel must have no extra field. If local ZIP64 is used, APPNOTE 4.5.3
+requires both local size values; AURAL's no-surplus rule therefore requires
+both classic size fields to be sentinels and exactly one `0x0001` field with
+exactly 16 data bytes. The values are decoded in fixed APPNOTE order:
+uncompressed size followed by compressed size. Missing, unnecessary,
+duplicate, truncated, surplus, and non-`0x0001` fields are rejected.
 
-## Ordinary ZIP versus the AURAL profile
-
-APPNOTE permits features that Draft 0.2 prohibits. This stage enforces the
-Draft 0.2 choices relevant to local records and layout:
-
-- method 0 only, with equal compressed and uncompressed sizes;
-- flags zero except optional UTF-8-name bit 11;
-- bit 3 data descriptors are reported as unsupported and never skipped;
-- no encryption, patched data, strong encryption, or masked local fields;
-- no local or central extra field in a fully classic result;
-- no entry or archive comment; and
-- no prefix, gap, trailer, or undeclared byte between local entries, the
-  central directory, and terminal EOCD.
-
-The central parser already requires a single disk, a terminal classic/ZIP64
-EOCD chain, and a central directory ending at that chain. This stage requires the first
-physical local header at offset zero, each following physical header exactly
-at the preceding payload end, and the final payload exactly at the central-
-directory start. A reordered central directory is valid.
-
-## ZIP64 and descriptors
-
-The central parser resolves a necessary central ZIP64 extra. This local-layout
-stage then returns `zip64_entry_resolution_pending` before consuming local
-metadata because local ZIP64 extra resolution is intentionally deferred.
-Either 32-bit local-size sentinel in an otherwise classic central result
-returns `zip64_support_required`. No ZIP64 entry extra is partially accepted.
-In a classic record, a nonempty
-extra field is an unsupported AURAL feature because Draft 0.2 permits only a
-necessary ZIP64 field.
-
-APPNOTE permits bit-3 data descriptors and both signed and unsigned descriptor
-forms. Draft 0.2 prohibits descriptors, so the component reports the feature
-at the local flags field and does not infer a descriptor length or scan for a
-signature.
+After independent expansion, effective local and central compressed and
+uncompressed sizes must agree. Their classic sentinel representations need
+not be identical: local-only and central-only necessary ZIP64 declarations are
+valid when their effective values agree. Version-needed must be 4.5 when
+either header uses ZIP64. Version, flags, method, timestamps, CRC declaration,
+and filename bytes otherwise match exactly. Stored compressed and
+uncompressed sizes must be equal.
 
 ## Physical range algorithm
 
-After parsing all local records, the component sorts owned range metadata by
-physical offset. It detects duplicate local references, overlapping local
-structures, header/payload intersections, payload/payload intersections, and
-entry intersections with the central directory or EOCD. Checked 64-bit
-addition is used for every derived end. A payload beyond physical EOF is
-reported as truncated before any payload I/O.
+The payload is the checked half-open range beginning immediately after the
+fixed header, filename, and permitted extra field. Its length is the resolved
+64-bit compressed size. Payload bytes are never buffered or read by this
+stage. Returned metadata owns the bounded filename and local extra bytes and
+is sorted by physical local-header offset, independently of central order.
 
-## Errors, ownership, and limits
+The validator checks fixed and variable local-header ranges, payload ends,
+physical EOF, duplicate local references, header/header, header/payload, and
+payload/payload overlap. Every local entry must remain before the central
+directory. Because the validated central directory is contiguous with the
+applicable ZIP64 EOCD/locator and classic EOCD chain, the central-directory
+barrier also prevents any payload from reaching those end records.
 
-Malformed structure, unsupported AURAL ZIP features, ZIP64 entry-pending or
-local ZIP64-required input, resource exhaustion, and native file failures are distinct statuses. Structural
-and feature details carry a physical byte offset. Central-parser details remain
-nested when that prerequisite fails. Human diagnostics never contain an
-untrusted filename.
+The first physical local header must begin at offset zero, each later header
+must begin at the previous payload end, and the final payload must end exactly
+at the central-directory start. These equalities reject prefixes, gaps,
+trailers, and undeclared regions. All derived ends use checked unsigned 64-bit
+arithmetic.
 
-The file is opened once, read-only, and shared with the central and local
-stages, preserving the existing native snapshot checks. Default limits remain
-8,606,711,808 physical bytes, 4,194,304 central-directory bytes, and two
-entries. A local filename plus extra field is inherently bounded by the two
-16-bit length fields. Allocation failure returns no partial layout. There is no
-recursion, extraction, decompression, archive write, or payload buffering.
+## Profile restrictions, limits, and errors
 
-## Resolved interpretation and remaining ambiguity
+Method 0 is required; flags must be zero except optional UTF-8-name bit 11;
+data descriptors and all encryption-related flags are unsupported. Entry and
+archive comments are prohibited. ZIP64 disk starts remain single-disk only.
 
-Draft 0.2 explicitly requires exact local/central agreement after ZIP64
-expansion and gapless layout; those are profile rules, not claims about
-ordinary ZIP validity. Central extras are already checked for strict ZIP64
-necessity. For this classic local-layout stage, a local extra is reported as
-unsupported unless a local sentinel first requires ZIP64 support. The next
-milestone must resolve local ZIP64 values, compare them with the resolved
-central values, and integrate them into complete physical layout.
+Default limits are 8,606,711,808 physical bytes, 4,194,304 central-directory
+bytes, two entries, and 8,589,934,592 uncompressed bytes per entry. Variable
+local fields are additionally bounded by their 16-bit lengths. Allocation
+failure, native I/O failure, unsupported profile features, malformed local
+ZIP64 fields, ZIP64 necessity violations, local/central disagreement, and
+invalid physical ranges remain typed outcomes. Structural errors carry a
+physical byte offset and no invalid result contains a partial layout.
 
-APPNOTE does not make central-directory ordering match physical ordering, and
-Draft 0.2 says entry order is insignificant to readers. Therefore central
-record reordering is accepted. No unresolved ambiguity affects classic
-acceptance in this stage.
+## Remaining work
+
+This component does not compute payload CRC32 or SHA-256, validate payload
+content, enforce the exact AURAL entry inventory or regular-file attributes,
+correlate a manifest, validate WAVE/RF64, decompress, extract, or provide a
+Core Reader conformance adapter. Those operations cannot be inferred from a
+successful structural layout.

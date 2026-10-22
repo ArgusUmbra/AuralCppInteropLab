@@ -436,10 +436,10 @@ void test_profile_features(const TemporaryDirectory& temporary)
 
     auto local_extra = entry("a", "x");
     local_extra.local_extra = octets("x");
-    require_unsupported(inspect(temporary, "local-extra.zip",
-                                make_archive({local_extra}).bytes),
-                        UnsupportedArchiveFeature::local_extra_field,
-                        "local extra");
+    require_error(inspect(temporary, "local-extra.zip",
+                          make_archive({local_extra}).bytes),
+                  LocalLayoutErrorCode::local_extra_field_header_truncated,
+                  31U, "local extra");
 
     auto central_extra = entry("a", "x");
     central_extra.central_extra = octets("x");
@@ -471,9 +471,13 @@ void test_profile_features(const TemporaryDirectory& temporary)
     set_u32(zip64_local.bytes, 18U, UINT32_MAX);
     const auto zip64_result =
         inspect(temporary, "zip64-local.zip", zip64_local.bytes);
-    require(zip64_result.status == LocalLayoutStatus::zip64_support_required
-                && zip64_result.zip64->offset == 18U,
-            "local ZIP64 sentinel is explicit");
+    require(zip64_result.status == LocalLayoutStatus::invalid_structure
+                && zip64_result.error
+                && zip64_result.error->code
+                    == LocalLayoutErrorCode::
+                        local_zip64_size_sentinels_incomplete
+                && zip64_result.error->offset == 22U,
+            "local ZIP64 size sentinels must be paired");
 
     auto zip64_central = make_archive({entry("a", "x")});
     set_u32(zip64_central.bytes, zip64_central.centrals[0] + 20U,

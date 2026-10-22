@@ -44,8 +44,8 @@ struct ZipEndRecordInspection final {
     }
 };
 
-// Internal ZIP foundation entry points. They resolve only archive-level ZIP64
-// records; per-entry ZIP64 extra fields remain a separate later stage.
+// Internal ZIP foundation entry points. They resolve archive-level ZIP64
+// records; per-entry fields are resolved by the central and local stages.
 [[nodiscard]] ZipEndRecordInspection inspect_zip_end_records(
     const std::filesystem::path& path,
     ClassicZipLimits limits = {});

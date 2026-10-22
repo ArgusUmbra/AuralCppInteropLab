@@ -56,7 +56,6 @@ CentralDirectoryInspection invalid(const CentralDirectoryErrorCode code,
             std::nullopt,
             CentralDirectoryError{code, offset},
             std::nullopt,
-            std::nullopt,
             std::nullopt};
 }
 
@@ -66,14 +65,12 @@ CentralDirectoryInspection file_failure(const FileError error)
             std::nullopt,
             std::nullopt,
             std::nullopt,
-            std::nullopt,
             error};
 }
 
 CentralDirectoryInspection allocation_failure()
 {
     return {CentralDirectoryStatus::resource_failure,
-            std::nullopt,
             std::nullopt,
             std::nullopt,
             CentralDirectoryResource::allocation_failure,
@@ -367,7 +364,6 @@ CentralDirectoryInspection inspect_open_file(const FileReader& reader,
         std::move(entries)};
     return {CentralDirectoryStatus::structurally_valid,
             std::move(directory),
-            std::nullopt,
             std::nullopt,
             std::nullopt,
             std::nullopt};
