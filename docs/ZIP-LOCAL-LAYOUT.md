@@ -9,8 +9,9 @@ sections 4.3.2-4.3.9, 4.3.12, 4.4.1, 4.4.3-4.4.12, 4.4.16-4.4.18, and 4.5.3.
 
 Success establishes a complete structural layout for classic or ZIP64 stored
 entries. It is not complete AURAL package acceptance. Exact two-name inventory,
-regular-file attribute policy, manifest correlation, CRC32 computation,
-SHA-256, and WAVE/RF64 validation remain separate stages.
+regular-file attribute policy, manifest correlation, SHA-256, and WAVE/RF64
+validation remain separate stages. CRC32 computation is a following internal
+stage over the returned payload ranges.
 
 ## Local ZIP64 resolution and consistency
 
@@ -73,8 +74,9 @@ physical byte offset and no invalid result contains a partial layout.
 
 ## Remaining work
 
-This component does not compute payload CRC32 or SHA-256, validate payload
-content, enforce the exact AURAL entry inventory or regular-file attributes,
-correlate a manifest, validate WAVE/RF64, decompress, extract, or provide a
-Core Reader conformance adapter. Those operations cannot be inferred from a
-successful structural layout.
+This component itself does not compute payload CRC32 or SHA-256, validate
+payload content, enforce the exact AURAL entry inventory or regular-file
+attributes, correlate a manifest, validate WAVE/RF64, decompress, extract, or
+provide a Core Reader conformance adapter. The separate CRC32 stage consumes
+its validated payload locations. None of those operations can be inferred
+from a successful structural layout.

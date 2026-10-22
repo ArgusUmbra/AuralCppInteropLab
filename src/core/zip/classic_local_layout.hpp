@@ -18,6 +18,7 @@ struct ClassicEntryPhysicalLayout final {
     std::uint64_t payload_offset;
     std::uint64_t payload_size;
     std::uint64_t payload_end;
+    std::uint32_t declared_crc32;
     std::vector<std::byte> file_name;
     std::vector<std::byte> extra_field;
 };

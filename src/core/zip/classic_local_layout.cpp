@@ -292,8 +292,8 @@ std::optional<LocalLayoutInspection> validate_profile_fields(
     return std::nullopt;
 }
 
-LocalLayoutInspection inspect_open_file(const FileReader& reader,
-                                        const ClassicZipLimits limits)
+LocalLayoutInspection inspect_open_file_impl(const FileReader& reader,
+                                             const ClassicZipLimits limits)
 {
     auto central = inspect_classic_central_directory_open(reader, limits, true);
     if (auto failure = map_central_failure(central)) return std::move(*failure);
@@ -445,6 +445,7 @@ LocalLayoutInspection inspect_open_file(const FileReader& reader,
             *header_end,
             entry.compressed_size,
             *payload_end,
+            entry.declared_crc32,
             std::move(name),
             std::move(extra)});
     }
@@ -518,6 +519,17 @@ LocalLayoutInspection inspect_open_file(const FileReader& reader,
 
 } // namespace
 
+LocalLayoutInspection inspect_classic_local_layout_open(
+    const FileReader& reader,
+    const ClassicZipLimits limits)
+{
+    try {
+        return inspect_open_file_impl(reader, limits);
+    } catch (const std::bad_alloc&) {
+        return allocation_failure();
+    }
+}
+
 LocalLayoutInspection inspect_classic_local_layout(
     const std::filesystem::path& path,
     const ClassicZipLimits limits)
@@ -525,7 +537,7 @@ LocalLayoutInspection inspect_classic_local_layout(
     try {
         auto opened = FileReader::open(path);
         if (!opened) return file_failure(opened.error());
-        return inspect_open_file(opened.value(), limits);
+        return inspect_classic_local_layout_open(opened.value(), limits);
     } catch (const std::bad_alloc&) {
         return allocation_failure();
     }

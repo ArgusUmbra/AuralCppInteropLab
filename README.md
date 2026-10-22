@@ -17,8 +17,9 @@ serialization, and internal byte-for-byte canonical JSON verification. It also
 contains manifest-structure validation, bounded internal classic and ZIP64
 EOCD-chain inspection, strict ZIP64 central-entry and local-size resolution,
 and complete classic/ZIP64 local-header and physical-layout inspection. It does
-**not** contain an AURAL package
-verifier and does not accept or extract AURAL packages.
+also contain bounded streaming CRC32 verification for structurally validated
+stored entry payloads. It does **not** contain an AURAL package verifier and
+does not accept or extract AURAL packages.
 
 ## Clean-room method
 
@@ -33,7 +34,7 @@ internal helpers, runners, and fixture generators are excluded. See
 [![Linux C++ CI](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml)
 
 The Linux workflow is configured for GCC 14, Clang 18, and Clang 18 with
-AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `e3de569`
+AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `64651c1`
 passed all three jobs, including the GCC analyzer. Uncommitted work in a local
 tree has not run in GitHub Actions and must not be described as CI-tested.
 
@@ -85,7 +86,7 @@ ctest --preset ucrt64-release
 
 The verified platform is Windows with MSYS2 UCRT64 GCC 15.2.0, CMake 4.2.3,
 Ninja 1.13.2, OpenSSL 3.6.1, and zlib 1.3.2. Ubuntu 24.04 with GCC, Clang, and
-the Clang sanitizers passed for baseline commit `e3de569`.
+the Clang sanitizers passed for baseline commit `64651c1`.
 
 ## Reusable library
 

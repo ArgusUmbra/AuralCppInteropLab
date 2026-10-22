@@ -102,6 +102,7 @@ add_library(
     src/core/utf8.cpp
     src/core/zip/classic_central_directory.cpp
     src/core/zip/classic_local_layout.cpp
+    src/core/zip/payload_crc32.cpp
     src/core/zip/zip64_end_records.cpp
 )
 add_library(aural::core ALIAS aural_core)
@@ -111,7 +112,7 @@ target_include_directories(
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
-target_link_libraries(aural_core PRIVATE aural_project_warnings)
+target_link_libraries(aural_core PRIVATE aural_project_warnings ZLIB::ZLIB)
 if(AURAL_ENABLE_GCC_ANALYZER)
     target_compile_options(aural_core PRIVATE -fanalyzer)
     # GCC 15 falsely reports optional<FileReader>'s inactive storage in both
@@ -295,6 +296,16 @@ if(BUILD_TESTING)
     add_executable(
         core_zip64_local_layout_tests
         tests/core_zip64_local_layout_tests.cpp
+    )
+    add_executable(
+        core_zip_payload_crc32_tests
+        tests/core_zip_payload_crc32_tests.cpp
+    )
+    target_link_libraries(
+        core_zip_payload_crc32_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
     )
     target_link_libraries(
         core_zip64_local_layout_tests
@@ -482,5 +493,16 @@ if(BUILD_TESTING)
         core_zip64_local_layout
         PROPERTIES
             PASS_REGULAR_EXPRESSION "CORE_ZIP64_LOCAL_LAYOUT_TESTS_OK"
+    )
+    add_test(
+        NAME core_zip_payload_crc32
+        COMMAND
+            core_zip_payload_crc32_tests
+            "${CMAKE_CURRENT_SOURCE_DIR}/frozen-input/source/tests/fixtures/conformance"
+    )
+    set_tests_properties(
+        core_zip_payload_crc32
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CORE_ZIP_PAYLOAD_CRC32_TESTS_OK"
     )
 endif()
