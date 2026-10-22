@@ -64,6 +64,7 @@ requirement is implemented or tested.
 | Adapter request/response and error semantics | Adapter Protocol 1 §§2-6 | Future adapter executable and external runner | Frozen; planned |
 | Thirty-three required Core Reader cases | Core Reader case manifest v1 | Future external conformance run | Inputs frozen; no conformance adapter and cases not executed end-to-end |
 | Two Draft 0.1 cases | Core Reader case manifest v1 | Optional legacy run | Optional inputs frozen; not executed |
+| Streaming SHA-256 over each structurally validated stored payload | Frozen Draft 0.2 payload-integrity requirements | `core_zip_payload_sha256`: independent empty, `abc`, million-`a`, arbitrary-binary, and multichunk known answers; classic/multiple/ZIP64 ranges; 64 KiB boundaries; repeatability; immutability; truncation/unreadable input; hostile offset/size declarations; typed CRC, structure, and I/O failures; frozen fixtures | OpenSSL EVP bounded streaming calculation implemented and tested locally; manifest correlation and new CI run pending |
 | SHA-256 provider availability | Engineering foundation | `dependency_known_answers` | Foundation tested |
 | CRC32 provider availability | Engineering foundation | `dependency_known_answers` | Foundation tested |
 | Frozen snapshot byte integrity | Snapshot metadata | `frozen_input_checksums` | Foundation tested |

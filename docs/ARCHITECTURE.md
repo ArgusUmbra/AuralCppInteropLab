@@ -56,6 +56,13 @@ The repository currently builds only:
   and returns typed mismatch, prerequisite, I/O, resource, and unsupported
   outcomes; `core_zip_payload_crc32` provides known-answer, boundary,
   corruption, repeatability, immutability, and frozen-fixture coverage.
+- `aural_core` contains an internal OpenSSL 3 EVP SHA-256 stage over those same
+  validated stored-payload ranges. CRC32 and SHA-256 are updated together from
+  one fixed 65,536-byte buffer on the inspector's open `FileReader`; digests
+  are returned only after the ZIP CRC32 prerequisite succeeds.
+  `core_zip_payload_sha256` covers independent known answers, classic and
+  ZIP64 layouts, chunk boundaries, hostile ranges, typed failures,
+  repeatability, immutability, and CRC32 regressions.
 
 There is no package verifier component yet.
 
@@ -70,7 +77,7 @@ There is no package verifier component yet.
 | Manifest structure | Required/optional Draft 0.2 members, closed core objects, local field constraints, timestamps, and extensions | Implemented over a const owned JSON tree; success is structural only and cannot imply package validity |
 | Manifest semantic model | Immutable package-correlated Draft 0.2 values | Planned; construct only after archive agreement, hash, and cross-field validation |
 | ZIP/ZIP64 records | Classic and ZIP64 EOCD chains, central-entry expansion, local ZIP64 size expansion, and complete structural physical-layout validation are implemented | Same read-only snapshot; bounded names/extras; checked 64-bit ranges; no payload buffering; exact effective metadata agreement; no partial layout on failure |
-| CRC32/SHA-256 streams | zlib CRC32 over validated stored payload ranges is implemented; OpenSSL EVP SHA-256 remains planned | CRC32 uses one fixed 65,536-byte buffer and checked 64-bit positions; never buffers an entire hostile asset |
+| CRC32/SHA-256 streams | zlib CRC32 verification and OpenSSL 3 EVP SHA-256 calculation over validated stored payload ranges are implemented | One fixed 65,536-byte buffer, checked 64-bit positions, complete 32-byte binary digests, and canonical lowercase hex formatting; never buffers an entire hostile asset |
 | Package verifier | Ordered orchestration of container, manifest, WAV identity, and integrity checks | No extraction; explicit typed result and controlled rejection |
 | Adapter Protocol 1 | Strict bounded stdin/stdout protocol around package verification | Separate protocol errors from controlled package rejection |
 
@@ -97,6 +104,7 @@ to substitute for validated file offsets.
 7. Return an explicit accept/reject result with bounded diagnostics.
 8. Expose that result through Adapter Protocol 1 in a separate executable layer.
 
-Steps 1 and 2, ZIP CRC32 in step 6, and the JSON/manifest foundations for
-steps 3 and 4 are implemented. SHA-256 correlation and complete package
-acceptance remain planned.
+Steps 1 and 2, ZIP CRC32 and SHA-256 calculation in step 6, and the
+JSON/manifest foundations for steps 3 and 4 are implemented. WAV/RF64
+validation, manifest-to-archive SHA-256 correlation, exact inventory, and
+complete package acceptance remain planned.

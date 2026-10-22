@@ -16,10 +16,11 @@ UTF-16 property-ordering foundations, complete bounded canonical JSON document
 serialization, and internal byte-for-byte canonical JSON verification. It also
 contains manifest-structure validation, bounded internal classic and ZIP64
 EOCD-chain inspection, strict ZIP64 central-entry and local-size resolution,
-and complete classic/ZIP64 local-header and physical-layout inspection. It does
-also contain bounded streaming CRC32 verification for structurally validated
-stored entry payloads. It does **not** contain an AURAL package verifier and
-does not accept or extract AURAL packages.
+and complete classic/ZIP64 local-header and physical-layout inspection. It also
+contains bounded streaming CRC32 verification and OpenSSL EVP SHA-256
+calculation for structurally validated stored entry payloads. It does **not**
+correlate those digests with the manifest, contain an AURAL package verifier,
+or accept or extract AURAL packages.
 
 ## Clean-room method
 
@@ -34,9 +35,10 @@ internal helpers, runners, and fixture generators are excluded. See
 [![Linux C++ CI](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/ArgusUmbra/AuralCppInteropLab/actions/workflows/linux-ci.yml)
 
 The Linux workflow is configured for GCC 14, Clang 18, and Clang 18 with
-AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `64651c1`
-passed all three jobs, including the GCC analyzer. Uncommitted work in a local
-tree has not run in GitHub Actions and must not be described as CI-tested.
+AddressSanitizer plus UndefinedBehaviorSanitizer. Baseline commit `c78edb1`
+passed all three jobs in run 17, including the GCC analyzer. Uncommitted work
+in a local tree has not run in GitHub Actions and must not be described as
+CI-tested.
 
 ## Build and test
 
@@ -86,7 +88,7 @@ ctest --preset ucrt64-release
 
 The verified platform is Windows with MSYS2 UCRT64 GCC 15.2.0, CMake 4.2.3,
 Ninja 1.13.2, OpenSSL 3.6.1, and zlib 1.3.2. Ubuntu 24.04 with GCC, Clang, and
-the Clang sanitizers passed for baseline commit `64651c1`.
+the Clang sanitizers passed for baseline commit `c78edb1`.
 
 ## Reusable library
 
@@ -153,6 +155,10 @@ returns a typed category and byte offset without throwing. Embedded NUL is
 valid at this layer; JSON syntax and escape validation remain separate. See
 `docs/UTF8.md` and the compiled `validate_utf8_example`.
 
+Stored ZIP payload integrity stages are internal to `aural::core`. See
+`docs/ZIP-PAYLOAD-CRC32.md` and `docs/ZIP-PAYLOAD-SHA256.md` for their bounded
+streaming, ownership, typed-result, and package-validity limits.
+
 All APIs are experimental. No installed-package, stable-source, or stable-ABI
 guarantee is provided.
 
@@ -171,9 +177,10 @@ verification of the input space, or a security guarantee.
 - Manifest structure and ZIP structure are separate internal foundations.
   ZIP64 EOCD/locator metadata and necessary central and local ZIP64 extras are
   validated, as are effective central/local agreement and complete physical
-  payload ranges. Complete package inventory and
-  metadata policy, CRC/hash verification, WAV validation, and the adapter do
-  not exist.
+  payload ranges. Stored-payload CRC32 verification and binary SHA-256 digest
+  calculation are implemented internally. Complete package inventory,
+  manifest-to-payload hash correlation, metadata policy, WAV/RF64 validation,
+  and the adapter do not exist.
 - No package-verification API exists.
 - File consistency checks reduce, but cannot eliminate, concurrent-mutation
   races or detect every same-size content change on every filesystem.
