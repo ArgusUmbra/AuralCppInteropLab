@@ -203,8 +203,7 @@ std::optional<LocalLayoutInspection> validate_profile_fields(
         return unsupported(UnsupportedArchiveFeature::version_needed,
                            local_offset + 4U);
     }
-    if (central.declared_compressed_size
-        != central.declared_uncompressed_size) {
+    if (central.compressed_size != central.uncompressed_size) {
         return invalid(LocalLayoutErrorCode::stored_size_mismatch,
                        central.header_offset + 20U);
     }
@@ -233,6 +232,23 @@ LocalLayoutInspection inspect_open_file(const FileReader& reader,
     if (directory.archive_comment_length != 0U) {
         return unsupported(UnsupportedArchiveFeature::archive_comment,
                            directory.eocd_offset + 20U);
+    }
+
+    // Central ZIP64 values are resolved, but local ZIP64 extra fields are a
+    // later milestone. Do not compare classic local fields against expanded
+    // central values or claim a complete physical layout yet.
+    for (const auto& entry : directory.entries) {
+        if (entry.uses_zip64) {
+            std::uint64_t offset = entry.header_offset + 24U;
+            if (entry.declared_uncompressed_size != UINT32_MAX) {
+                offset = entry.declared_compressed_size == UINT32_MAX
+                    ? entry.header_offset + 20U
+                    : entry.declared_local_header_offset == UINT32_MAX
+                        ? entry.header_offset + 42U
+                        : entry.header_offset + 34U;
+            }
+            return entry_resolution_pending(offset);
+        }
     }
 
     std::vector<ClassicEntryPhysicalLayout> entries;
@@ -334,8 +350,7 @@ LocalLayoutInspection inspect_open_file(const FileReader& reader,
             return std::move(*failure);
         }
 
-        const auto payload_end =
-            checked_add(*header_end, entry.declared_compressed_size);
+        const auto payload_end = checked_add(*header_end, entry.compressed_size);
         if (!payload_end) {
             return invalid(LocalLayoutErrorCode::payload_truncated, *header_end);
         }
@@ -374,7 +389,7 @@ LocalLayoutInspection inspect_open_file(const FileReader& reader,
             offset,
             *header_size,
             *header_end,
-            entry.declared_compressed_size,
+            entry.compressed_size,
             *payload_end,
             std::move(name),
             std::move(extra)});

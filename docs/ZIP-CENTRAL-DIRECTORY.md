@@ -1,4 +1,4 @@
-# Classic ZIP central-directory inspection
+# ZIP central-directory inspection
 
 ## Authority and boundary
 
@@ -28,9 +28,12 @@ central file header retains:
 - versions made-by and needed;
 - general-purpose flags and compression method;
 - MS-DOS modification time and date;
-- declared CRC32, compressed size, and uncompressed size;
+- declared CRC32 plus the original classic compressed-size and
+  uncompressed-size fields;
+- original classic disk-start and local-header-offset fields;
+- effective unsigned 64-bit sizes and local-header offset plus effective disk
+  metadata;
 - internal and external attributes;
-- declared local-header offset;
 - exact filename octets, including embedded NUL or non-UTF-8 bytes; and
 - extra-field and entry-comment lengths.
 
@@ -53,13 +56,19 @@ record lengths. Entry storage is reserved only after the count ceiling passes.
 
 Single-disk structure is enforced now because split and spanned disks are
 outside the frozen profile. Classic EOCD sentinels are resolved through the
-required ZIP64 EOCD and locator. A sentinel in an entry size, disk, or local
-offset field produces `zip64_entry_resolution_pending`, never a partially
-valid directory. See `ZIP64-END-RECORDS.md` for the envelope rules.
+required ZIP64 EOCD and locator. Central-entry sentinels are resolved from the
+sole permitted extra field, ZIP64 ID `0x0001`, in APPNOTE order: uncompressed
+size, compressed size, local-header offset, then disk start. Each value is
+present exactly when its classic field is a sentinel. The parser rejects a
+missing, unnecessary, duplicate, truncated, surplus, incorrectly identified,
+or nonzero-disk field and retains both original declarations and effective
+values. See `ZIP64-END-RECORDS.md` for the envelope rules.
 
 Ordinary ZIP metadata that AURAL later prohibits is retained rather than
 treated as structural corruption here. That includes non-stored compression,
-general-purpose flags, arbitrary filename bytes, extra fields, and comments.
+general-purpose flags, arbitrary filename bytes, and comments. Central extra
+fields are validated here because Draft 0.2 permits only strictly necessary
+ZIP64 data.
 Later package-profile validation must require the two exact AURAL names,
 method 0, allowed flags and ZIP64 extras, empty comments, regular-file
 attributes, and the exact two-entry inventory.
@@ -67,8 +76,10 @@ attributes, and the exact two-entry inventory.
 ## Error and ownership model
 
 Expected outcomes are separated into structurally valid, invalid structure,
-ZIP64 entry resolution pending, resource failure, and file failure. Structural
-and ZIP64 details carry the physical offset of the responsible record or field.
+resource failure, and file failure. The legacy ZIP64-pending status remains in
+the internal result type for downstream compatibility but successful central
+resolution no longer uses it. Structural details carry the physical offset of
+the responsible record, field, missing-value boundary, or surplus byte.
 Native file details remain nested `FileError` values. Allocation failure is
 reported without a partial directory.
 
@@ -78,8 +89,7 @@ views into temporary I/O buffers.
 
 ## Explicitly unsupported
 
-This milestone does not validate local-header signatures or equality, entry
-payload boundaries, contiguity of complete local records, entry data, CRC32,
-hashes, manifest agreement, WAVE identity, decompression, extraction, ZIP64
-entry extras, prefixes, or complete AURAL package validity. These remain
-separate verification stages.
+This milestone does not resolve local-header ZIP64 extras or validate complete
+ZIP64 physical layout. It also does not validate entry data, CRC32, hashes,
+manifest agreement, WAVE identity, decompression, extraction, or complete
+AURAL package validity. These remain separate verification stages.

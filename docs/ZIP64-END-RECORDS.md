@@ -39,9 +39,9 @@ addition; no resolved value is narrowed to a classic field.
 
 The classic EOCD alone remains sufficient when it has no sentinel. ZIP64
 signatures in comments or other unrelated bytes do not trigger ZIP64 parsing.
-When a central file header subsequently contains a sentinel, the central
-parser returns `zip64_entry_resolution_pending`; it does not expose a partial
-directory as structurally valid.
+Central file-header sentinels are now resolved independently from a necessary
+and exact ZIP64 `0x0001` extra field. This does not change whether the
+archive-level ZIP64 end-record chain is necessary.
 
 ## Bounds, placement, and errors
 
@@ -77,13 +77,13 @@ The existing archive-level inspector is consistent with this clarification.
 It requires the chain whenever a classic EOCD sentinel is present, while a
 redundant chain leaves undeclared bytes between the central directory and
 classic EOCD and is rejected by the exact-end boundary check. No parser change
-is needed for the archive-level rule. Per-entry ZIP64 extra-field resolution
-and its exact necessity checks remain deliberately unimplemented.
+is needed for the archive-level rule. Central per-entry ZIP64 resolution is
+implemented separately; local-header ZIP64 resolution remains deferred.
 
 ## Remaining ZIP64 work
 
-ZIP64 per-entry extra-field order and exact-length validation, resolved entry
-sizes and local-header offsets, local/central comparison after expansion, and
-complete ZIP64 physical-layout validation remain for the next milestone.
+Local ZIP64 per-entry extra-field resolution, local/central comparison after
+expansion, and complete ZIP64 physical-layout validation remain for the next
+milestone.
 CRC32, SHA-256, inventory, manifest correlation, WAVE/RF64 identification,
 extraction, and package verification also remain outside this component.

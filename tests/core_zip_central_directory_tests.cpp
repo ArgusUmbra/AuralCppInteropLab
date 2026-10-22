@@ -21,7 +21,6 @@ using aural::core::zip::CentralDirectoryErrorCode;
 using aural::core::zip::CentralDirectoryInspection;
 using aural::core::zip::CentralDirectoryStatus;
 using aural::core::zip::ClassicZipLimits;
-using aural::core::zip::Zip64RequiredField;
 using aural::core::zip::inspect_classic_central_directory;
 
 [[noreturn]] void fail(const std::string_view message)
@@ -247,7 +246,6 @@ void test_valid_structures(const TemporaryDirectory& temporary)
     entry.crc32 = UINT32_C(0xdeadbeef);
     entry.compressed_size = 7U;
     entry.uncompressed_size = 11U;
-    entry.extra = byte_string({1U, 2U, 3U});
     entry.comment = byte_string({4U, 5U});
     const auto ordinary = make_archive({entry});
     const auto result = inspect_bytes(temporary, "ordinary.zip", ordinary);
@@ -260,7 +258,7 @@ void test_valid_structures(const TemporaryDirectory& temporary)
                 && parsed.declared_compressed_size == 7U
                 && parsed.declared_uncompressed_size == 11U
                 && parsed.local_header_offset == 0U
-                && parsed.extra_field_length == 3U
+                && parsed.extra_field_length == 0U
                 && parsed.comment_length == 2U,
             "central metadata is retained without package-validity claims");
 
@@ -423,14 +421,9 @@ void test_counts_and_entry_zip64(const TemporaryDirectory& temporary)
 
     auto zip64_entry = archive;
     set_u32(zip64_entry, 30U + 20U, UINT32_MAX);
-    const auto result = inspect_bytes(
-        temporary, "zip64-entry.zip", zip64_entry);
-    require(result.status
-                == CentralDirectoryStatus::zip64_entry_resolution_pending
-                && result.zip64->field
-                    == Zip64RequiredField::entry_compressed_size
-                && result.zip64->offset == 50U,
-            "entry sentinel produces distinct ZIP64-entry-pending outcome");
+    require_error(inspect_bytes(temporary, "zip64-entry.zip", zip64_entry),
+                  CentralDirectoryErrorCode::missing_zip64_extra_field, 50U,
+                  "entry sentinel requires a ZIP64 extra field");
 
     EntrySpec first;
     first.name = byte_string({0x61U});
@@ -481,6 +474,21 @@ void test_frozen_examples(const std::filesystem::path& fixture_directory)
                                    return entry.compression_method != 0U;
                                }),
             "compression policy remains outside structural inspection");
+
+    const auto prohibited_extra = inspect_classic_central_directory(
+        fixture_directory / "invalid-extra-field.aural");
+    require(prohibited_extra.status == CentralDirectoryStatus::invalid_structure
+                && prohibited_extra.error->code
+                    == CentralDirectoryErrorCode::prohibited_extra_field,
+            "frozen non-ZIP64 central extra is rejected");
+
+    const auto unnecessary_zip64 = inspect_classic_central_directory(
+        fixture_directory / "invalid-unnecessary-zip64-extra.aural");
+    require(unnecessary_zip64.status
+                == CentralDirectoryStatus::invalid_structure
+                && unnecessary_zip64.error->code
+                    == CentralDirectoryErrorCode::unnecessary_zip64_extra_field,
+            "frozen unnecessary ZIP64 central extra is rejected");
 
     const auto trailer = inspect_classic_central_directory(
         fixture_directory / "invalid-trailer.aural");

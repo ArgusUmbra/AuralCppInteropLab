@@ -39,6 +39,9 @@ The repository currently builds only:
   end-record metadata; and
 - `core_zip_central_directory`, independently assembled byte-record tests and
   selected frozen-fixture structural coverage; and
+- `core_zip64_central_entries`, independent byte-level coverage for strict
+  ZIP64 extra necessity, ordering, exact sizing, resolved metadata, bounds,
+  deterministic offsets, and input immutability; and
 - `aural_core` contains an internal same-snapshot classic local-header and
   physical-layout validator with exact central/local agreement, checked
   payload ranges, Draft 0.2 gap/feature policy, and explicit ZIP64 deferral;
@@ -60,7 +63,7 @@ There is no package verifier component yet.
 | RFC 8785 JCS | Canonical decoded-string serialization, non-mutating UTF-16 property ordering, complete iterative document serialization, and original-byte validation are implemented | Validate/measure before exact output allocation, depth/value/string/output bounds, no partial success, first mismatch offset, and separate sorted index views |
 | Manifest structure | Required/optional Draft 0.2 members, closed core objects, local field constraints, timestamps, and extensions | Implemented over a const owned JSON tree; success is structural only and cannot imply package validity |
 | Manifest semantic model | Immutable package-correlated Draft 0.2 values | Planned; construct only after archive agreement, hash, and cross-field validation |
-| ZIP/ZIP64 records | Classic and ZIP64 EOCD chains plus classic central-directory, local-header, and physical-layout validation are implemented; per-entry ZIP64 expansion is planned | Same read-only snapshot; bounded names/extras; checked ranges; no payload buffering; explicit ZIP64-entry-pending outcome without claiming package validity |
+| ZIP/ZIP64 records | Classic and ZIP64 EOCD chains, central-entry ZIP64 expansion, and classic local-header/physical-layout validation are implemented; local ZIP64 integration is planned | Same read-only snapshot; bounded names/extras; checked ranges; no payload buffering; original declarations plus effective 64-bit central values; explicit local ZIP64-entry-pending outcome without claiming package validity |
 | CRC32/SHA-256 streams | zlib CRC32 and OpenSSL EVP SHA-256 over bounded byte ranges | Stream fixed-size buffers; never buffer an entire hostile asset |
 | Package verifier | Ordered orchestration of container, manifest, WAV identity, and integrity checks | No extraction; explicit typed result and controlled rejection |
 | Adapter Protocol 1 | Strict bounded stdin/stdout protocol around package verification | Separate protocol errors from controlled package rejection |

@@ -403,11 +403,12 @@ void test_resolved_values_and_limits(const TemporaryDirectory& temporary)
     const auto path = temporary.path() / "entry-pending.zip";
     write_bytes(path, entry_pending);
     const auto pending = inspect_classic_central_directory(path);
-    require(pending.status
-                == CentralDirectoryStatus::zip64_entry_resolution_pending
-                && pending.zip64
-                && pending.zip64->offset == offsets.central + 20U,
-            "entry-level ZIP64 sentinel has a distinct pending result");
+    require(pending.status == CentralDirectoryStatus::invalid_structure
+                && pending.error
+                && pending.error->code
+                    == CentralDirectoryErrorCode::missing_zip64_extra_field
+                && pending.error->offset == offsets.central + 20U,
+            "entry-level ZIP64 sentinel requires its own extra field");
 
     ArchiveOffsets empty_offsets{};
     auto empty_zip64 = make_zip64_one(empty_offsets);

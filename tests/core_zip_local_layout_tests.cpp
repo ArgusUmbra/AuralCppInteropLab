@@ -17,6 +17,7 @@
 
 namespace {
 
+using aural::core::zip::CentralDirectoryErrorCode;
 using aural::core::zip::LocalLayoutErrorCode;
 using aural::core::zip::LocalLayoutInspection;
 using aural::core::zip::LocalLayoutStatus;
@@ -442,10 +443,17 @@ void test_profile_features(const TemporaryDirectory& temporary)
 
     auto central_extra = entry("a", "x");
     central_extra.central_extra = octets("x");
-    require_unsupported(inspect(temporary, "central-extra.zip",
-                                make_archive({central_extra}).bytes),
-                        UnsupportedArchiveFeature::central_extra_field,
-                        "central extra");
+    const auto central_extra_archive = make_archive({central_extra});
+    const auto central_extra_result = inspect(
+        temporary, "central-extra.zip", central_extra_archive.bytes);
+    require(central_extra_result.status == LocalLayoutStatus::invalid_structure
+                && central_extra_result.error
+                && central_extra_result.error->code
+                    == LocalLayoutErrorCode::central_directory_invalid
+                && central_extra_result.central_error
+                && central_extra_result.central_error->code
+                    == CentralDirectoryErrorCode::extra_field_header_truncated,
+            "prohibited central extra fails in central parsing");
 
     auto comment = entry("a", "x");
     comment.comment = octets("x");
@@ -472,11 +480,13 @@ void test_profile_features(const TemporaryDirectory& temporary)
             UINT32_MAX);
     const auto central_zip64_result =
         inspect(temporary, "zip64-central.zip", zip64_central.bytes);
-    require(central_zip64_result.status
-                == LocalLayoutStatus::zip64_entry_resolution_pending
-                && central_zip64_result.zip64->offset
+    require(central_zip64_result.status == LocalLayoutStatus::invalid_structure
+                && central_zip64_result.central_error
+                && central_zip64_result.central_error->code
+                    == CentralDirectoryErrorCode::missing_zip64_extra_field
+                && central_zip64_result.central_error->offset
                     == zip64_central.centrals[0] + 20U,
-            "central ZIP64 entry resolution is explicitly pending");
+            "central ZIP64 sentinel without an extra is rejected");
 }
 
 void test_ranges_and_layout(const TemporaryDirectory& temporary)
@@ -610,10 +620,13 @@ void test_frozen_fixtures(const std::filesystem::path& fixtures)
                             fixtures / "invalid-compression.aural"),
                         UnsupportedArchiveFeature::compression_method,
                         "frozen compression fixture");
-    require_unsupported(aural::core::zip::inspect_classic_local_layout(
-                            fixtures / "invalid-extra-field.aural"),
-                        UnsupportedArchiveFeature::local_extra_field,
-                        "frozen extra fixture");
+    const auto extra = aural::core::zip::inspect_classic_local_layout(
+        fixtures / "invalid-extra-field.aural");
+    require(extra.status == LocalLayoutStatus::invalid_structure
+                && extra.central_error
+                && extra.central_error->code
+                    == CentralDirectoryErrorCode::prohibited_extra_field,
+            "frozen prohibited central extra is rejected");
 
     const auto trailer = aural::core::zip::inspect_classic_local_layout(
         fixtures / "invalid-trailer.aural");

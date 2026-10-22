@@ -12,7 +12,7 @@ Success means that the classic local records agree with their central records
 and satisfy the applicable Draft 0.2 physical ZIP profile. It is not complete
 AURAL package acceptance. Exact two-name inventory, regular-file attributes,
 manifest parsing/correlation, CRC32 computation, SHA-256, WAVE/RF64 identity,
-and ZIP64 entry-extra resolution remain later stages.
+and local ZIP64 entry-extra resolution remain later stages.
 
 ## Validated records and consistency
 
@@ -52,10 +52,12 @@ directory start. A reordered central directory is valid.
 
 ## ZIP64 and descriptors
 
-An entry sentinel discovered by the central parser returns
-`zip64_entry_resolution_pending`; either 32-bit local-size sentinel returns
-`zip64_support_required`. No ZIP64 entry extra is partially accepted. In a
-classic record, a nonempty
+The central parser resolves a necessary central ZIP64 extra. This local-layout
+stage then returns `zip64_entry_resolution_pending` before consuming local
+metadata because local ZIP64 extra resolution is intentionally deferred.
+Either 32-bit local-size sentinel in an otherwise classic central result
+returns `zip64_support_required`. No ZIP64 entry extra is partially accepted.
+In a classic record, a nonempty
 extra field is an unsupported AURAL feature because Draft 0.2 permits only a
 necessary ZIP64 field.
 
@@ -92,10 +94,11 @@ recursion, extraction, decompression, archive write, or payload buffering.
 
 Draft 0.2 explicitly requires exact local/central agreement after ZIP64
 expansion and gapless layout; those are profile rules, not claims about
-ordinary ZIP validity. For this classic-only milestone, any extra field is
-reported as unsupported rather than malformed unless a sentinel first requires
-ZIP64 support. The next milestone must resolve the contents and equality of
-necessary ZIP64 extras and integrate their values into local layout.
+ordinary ZIP validity. Central extras are already checked for strict ZIP64
+necessity. For this classic local-layout stage, a local extra is reported as
+unsupported unless a local sentinel first requires ZIP64 support. The next
+milestone must resolve local ZIP64 values, compare them with the resolved
+central values, and integrate them into complete physical layout.
 
 APPNOTE does not make central-directory ordering match physical ordering, and
 Draft 0.2 says entry order is insignificant to readers. Therefore central

@@ -33,11 +33,17 @@ struct CentralDirectoryEntry final {
     std::uint16_t modification_time;
     std::uint16_t modification_date;
     std::uint32_t declared_crc32;
-    std::uint64_t declared_compressed_size;
-    std::uint64_t declared_uncompressed_size;
+    std::uint32_t declared_compressed_size;
+    std::uint32_t declared_uncompressed_size;
+    std::uint16_t declared_disk_start;
+    std::uint32_t declared_local_header_offset;
+    std::uint64_t compressed_size;
+    std::uint64_t uncompressed_size;
+    std::uint32_t disk_start;
     std::uint16_t internal_attributes;
     std::uint32_t external_attributes;
     std::uint64_t local_header_offset;
+    bool uses_zip64;
     std::vector<std::byte> file_name;
     std::uint16_t extra_field_length;
     std::uint16_t comment_length;
@@ -93,6 +99,15 @@ enum class CentralDirectoryErrorCode : std::uint8_t {
     invalid_central_header_signature,
     central_entry_length_overflow,
     central_entry_out_of_bounds,
+    extra_field_header_truncated,
+    extra_field_data_out_of_bounds,
+    prohibited_extra_field,
+    duplicate_zip64_extra_field,
+    missing_zip64_extra_field,
+    unnecessary_zip64_extra_field,
+    zip64_extra_required_value_truncated,
+    zip64_extra_trailing_data,
+    zip64_disk_start_multidisk,
     entry_count_mismatch,
     local_header_offset_out_of_bounds,
     local_header_range_overlaps_directory,

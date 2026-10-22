@@ -288,6 +288,16 @@ if(BUILD_TESTING)
         core_zip64_end_records_tests
         tests/core_zip64_end_records_tests.cpp
     )
+    add_executable(
+        core_zip64_central_entry_tests
+        tests/core_zip64_central_entry_tests.cpp
+    )
+    target_link_libraries(
+        core_zip64_central_entry_tests
+        PRIVATE
+            aural::core
+            aural_project_warnings
+    )
     target_link_libraries(
         core_zip64_end_records_tests
         PRIVATE
@@ -442,5 +452,14 @@ if(BUILD_TESTING)
     set_tests_properties(
         core_zip64_end_records
         PROPERTIES PASS_REGULAR_EXPRESSION "CORE_ZIP64_END_RECORDS_TESTS_OK"
+    )
+    add_test(
+        NAME core_zip64_central_entries
+        COMMAND core_zip64_central_entry_tests
+    )
+    set_tests_properties(
+        core_zip64_central_entries
+        PROPERTIES
+            PASS_REGULAR_EXPRESSION "CORE_ZIP64_CENTRAL_ENTRY_TESTS_OK"
     )
 endif()
